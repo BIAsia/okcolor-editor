@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   rgbToOklab,
   oklabToRgb,
+  oklabToRgbUnclamped,
   oklabToOklch,
   oklchToOklab,
   mixOklch,
@@ -86,6 +87,11 @@ describe("gradient and gamut", () => {
     expect(ramp.length).toBe(15);
     expect(ramp[0].r).toBeCloseTo(1, 2);
     expect(ramp[ramp.length - 1].b).toBeCloseTo(1, 2);
+  });
+
+  it("detects out-of-gamut before enforcing policy", () => {
+    const raw = oklabToRgbUnclamped({ l: 0.8, a: 0.45, b: -0.2 });
+    expect(raw.r > 1 || raw.r < 0 || raw.g > 1 || raw.g < 0 || raw.b > 1 || raw.b < 0).toBeTruthy();
   });
 
   it("clips gamut overflow", () => {

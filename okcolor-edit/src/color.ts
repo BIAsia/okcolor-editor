@@ -12,8 +12,7 @@ function srgbToLinear(v: number): number {
 }
 
 function linearToSrgb(v: number): number {
-  const c = clamp01(v);
-  return c <= 0.0031308 ? 12.92 * c : 1.055 * Math.pow(c, 1 / 2.4) - 0.055;
+  return v <= 0.0031308 ? 12.92 * v : 1.055 * Math.pow(Math.max(v, 0), 1 / 2.4) - 0.055;
 }
 
 export function rgbToOklab(rgb: RGB): Oklab {
@@ -36,7 +35,7 @@ export function rgbToOklab(rgb: RGB): Oklab {
   };
 }
 
-export function oklabToRgb(lab: Oklab): RGB {
+export function oklabToRgbUnclamped(lab: Oklab): RGB {
   const l_ = lab.l + 0.3963377774 * lab.a + 0.2158037573 * lab.b;
   const m_ = lab.l - 0.1055613458 * lab.a - 0.0638541728 * lab.b;
   const s_ = lab.l - 0.0894841775 * lab.a - 1.291485548 * lab.b;
@@ -50,9 +49,18 @@ export function oklabToRgb(lab: Oklab): RGB {
   const bLin = -0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s;
 
   return {
-    r: clamp01(linearToSrgb(rLin)),
-    g: clamp01(linearToSrgb(gLin)),
-    b: clamp01(linearToSrgb(bLin))
+    r: linearToSrgb(rLin),
+    g: linearToSrgb(gLin),
+    b: linearToSrgb(bLin)
+  };
+}
+
+export function oklabToRgb(lab: Oklab): RGB {
+  const raw = oklabToRgbUnclamped(lab);
+  return {
+    r: clamp01(raw.r),
+    g: clamp01(raw.g),
+    b: clamp01(raw.b)
   };
 }
 

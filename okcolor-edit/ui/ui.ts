@@ -1,16 +1,16 @@
 import {
-  adjustInOklab,
-  adjustInOklch,
-  applyLabCurves,
-  gradientRampFromStops,
-  oklabToRgb,
-  rgbToOklab,
+  applyCurve,
   enforceGamut,
   getCurvePreset,
-  type RGB,
-  type GamutPolicy,
+  gradientRampFromStops,
+  oklabToOklch,
+  oklabToRgbUnclamped,
+  oklchToOklab,
+  rgbToOklab,
   type CurvePoint,
-  type CurvePresetId
+  type CurvePresetId,
+  type GamutPolicy,
+  type RGB
 } from "../src/color";
 
 const byId = <T extends HTMLElement>(id: string): T => document.getElementById(id) as T;
@@ -168,15 +168,30 @@ function curveLabel(points: CurvePoint[]): string {
 
 function computeEditedColor(): { rgb: RGB; clipped: boolean } {
   const deltaLab = { l: Number(l.value), a: Number(a.value), b: Number(b.value) };
-  const afterLab = adjustInOklab(selectedColor, deltaLab);
-  const afterLch = adjustInOklch(afterLab, { c: Number(c.value), h: Number(h.value) });
+  const baseLab = rgbToOklab(selectedColor);
+  const shiftedLab = {
+    l: baseLab.l + deltaLab.l,
+    a: baseLab.a + deltaLab.a,
+    b: baseLab.b + deltaLab.b
+  };
 
-  const afterCurve = applyLabCurves(afterLch, {
-    l: getLumaCurve()
-  });
+  const shiftedLch = oklabToOklch(shiftedLab);
+  const adjustedLch = {
+    l: shiftedLch.l,
+    c: Math.max(0, shiftedLch.c + Number(c.value)),
+    h: (shiftedLch.h + Number(h.value) + 360) % 360
+  };
 
-  const safe = oklabToRgb(rgbToOklab(afterCurve));
-  return enforceGamut(safe, gamutPolicy.value as GamutPolicy);
+  const labAfterLch = oklchToOklab(adjustedLch);
+  const curve = getLumaCurve();
+  const labAfterCurve = {
+    l: applyCurve(labAfterLch.l, curve),
+    a: labAfterLch.a,
+    b: labAfterLch.b
+  };
+
+  const rawRgb = oklabToRgbUnclamped(labAfterCurve);
+  return enforceGamut(rawRgb, gamutPolicy.value as GamutPolicy);
 }
 
 function getGradientStops(): Array<{ position: number; color: RGB }> {
