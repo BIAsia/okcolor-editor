@@ -52,21 +52,33 @@ figma.ui.onmessage = (msg) => {
 
     for (const node of figma.currentPage.selection) {
       if (!("fills" in node)) continue;
-      const fills = node.fills as ReadonlyArray<Paint>;
-      const hasSolid = fills.some((p) => p.type === "SOLID");
-      if (!hasSolid) continue;
 
-      const next = fills.map((p) =>
-        p.type === "SOLID" ? { ...p, color: msg.color as RGB } : p
-      );
-      node.fills = next;
-      updatedNodes += 1;
+      const fills = node.fills as ReadonlyArray<Paint>;
+      const nextSolid: SolidPaint = {
+        type: "SOLID",
+        visible: true,
+        opacity: 1,
+        blendMode: "NORMAL",
+        color: msg.color as RGB
+      };
+
+      const next =
+        fills.length === 0
+          ? [nextSolid]
+          : [nextSolid, ...fills.filter((paint) => paint.type !== "SOLID")];
+
+      try {
+        node.fills = next;
+        updatedNodes += 1;
+      } catch {
+        // Some nodes expose readonly paints at runtime; skip them.
+      }
     }
 
     if (updatedNodes > 0) {
       figma.notify(`Applied OKColor edit to ${updatedNodes} layer${updatedNodes > 1 ? "s" : ""}`);
     } else {
-      figma.notify("No selected layers with SOLID fill", { error: true });
+      figma.notify("No selected layers with editable fills", { error: true });
     }
   }
 
