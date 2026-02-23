@@ -28,6 +28,11 @@ const gradMidPos = byId<HTMLInputElement>("gradMidPos");
 const gradMidColor = byId<HTMLInputElement>("gradMidColor");
 const gradEndColor = byId<HTMLInputElement>("gradEndColor");
 const gradPreview = byId<HTMLCanvasElement>("gradPreview");
+const recipeList = byId<HTMLSelectElement>("recipeList");
+const recipeName = byId<HTMLInputElement>("recipeName");
+const saveRecipeBtn = byId<HTMLButtonElement>("saveRecipe");
+const loadRecipeBtn = byId<HTMLButtonElement>("loadRecipe");
+const deleteRecipeBtn = byId<HTMLButtonElement>("deleteRecipe");
 const gamutPolicy = byId<HTMLSelectElement>("gamutPolicy");
 const gamutStatus = byId<HTMLDivElement>("gamutStatus");
 const applyBtn = byId<HTMLButtonElement>("apply");
@@ -53,6 +58,12 @@ type UiState = {
   gamutPolicy: GamutPolicy;
 };
 
+type SavedRecipe = {
+  name: string;
+  state: UiState;
+  updatedAt: number;
+};
+
 const historyLimit = 60;
 const undoStack: UiState[] = [];
 const redoStack: UiState[] = [];
@@ -65,6 +76,9 @@ const PALETTES: Record<string, { mid: string; end: string; midPos: string }> = {
   candy: { mid: "#ec4899", end: "#8b5cf6", midPos: "0.52" },
   complementary: { mid: "#16a34a", end: "#f97316", midPos: "0.50" }
 };
+
+const recipeStorageKey = "okcolor-edit:recipes:v1";
+let recipes: SavedRecipe[] = [];
 
 function captureState(): UiState {
   return {
@@ -107,6 +121,88 @@ function setControls(state: UiState): void {
 function updateHistoryButtons(): void {
   undoBtn.disabled = undoStack.length === 0;
   redoBtn.disabled = redoStack.length === 0;
+}
+
+function loadRecipes(): SavedRecipe[] {
+  try {
+    const raw = localStorage.getItem(recipeStorageKey);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as SavedRecipe[];
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter((recipe) => Boolean(recipe?.name) && Boolean(recipe?.state));
+  } catch {
+    return [];
+  }
+}
+
+function persistRecipes(): void {
+  localStorage.setItem(recipeStorageKey, JSON.stringify(recipes));
+}
+
+function renderRecipeOptions(selectedName = ""): void {
+  recipeList.innerHTML = "";
+
+  const placeholder = document.createElement("option");
+  placeholder.value = "";
+  placeholder.textContent = "(select saved recipe)";
+  recipeList.appendChild(placeholder);
+
+  for (const recipe of recipes) {
+    const option = document.createElement("option");
+    option.value = recipe.name;
+    option.textContent = recipe.name;
+    if (recipe.name === selectedName) {
+      option.selected = true;
+    }
+    recipeList.appendChild(option);
+  }
+
+  const hasSelection = recipeList.value !== "";
+  loadRecipeBtn.disabled = !hasSelection;
+  deleteRecipeBtn.disabled = !hasSelection;
+}
+
+function saveCurrentRecipe(): void {
+  const name = recipeName.value.trim();
+  if (!name) {
+    return;
+  }
+
+  const now = Date.now();
+  const state = captureState();
+  const existingIndex = recipes.findIndex((recipe) => recipe.name === name);
+  const nextRecipe: SavedRecipe = { name, state, updatedAt: now };
+
+  if (existingIndex >= 0) {
+    recipes[existingIndex] = nextRecipe;
+  } else {
+    recipes.push(nextRecipe);
+  }
+
+  recipes.sort((left, right) => right.updatedAt - left.updatedAt);
+  persistRecipes();
+  renderRecipeOptions(name);
+}
+
+function loadSelectedRecipe(): void {
+  const selectedName = recipeList.value;
+  if (!selectedName) return;
+
+  const selected = recipes.find((recipe) => recipe.name === selectedName);
+  if (!selected) return;
+
+  applyHistoryState(selected.state);
+  recipeName.value = selected.name;
+}
+
+function deleteSelectedRecipe(): void {
+  const selectedName = recipeList.value;
+  if (!selectedName) return;
+
+  recipes = recipes.filter((recipe) => recipe.name !== selectedName);
+  persistRecipes();
+  renderRecipeOptions();
+  recipeName.value = "";
 }
 
 function rgbToHex(rgb: RGB): string {
@@ -296,6 +392,18 @@ function redo(): void {
 undoBtn.onclick = undo;
 redoBtn.onclick = redo;
 
+recipeList.onchange = () => {
+  const selected = recipes.find((recipe) => recipe.name === recipeList.value);
+  recipeName.value = selected?.name ?? "";
+  const hasSelection = recipeList.value !== "";
+  loadRecipeBtn.disabled = !hasSelection;
+  deleteRecipeBtn.disabled = !hasSelection;
+};
+
+saveRecipeBtn.onclick = saveCurrentRecipe;
+loadRecipeBtn.onclick = loadSelectedRecipe;
+deleteRecipeBtn.onclick = deleteSelectedRecipe;
+
 window.addEventListener("keydown", (evt) => {
   const isUndo = (evt.ctrlKey || evt.metaKey) && !evt.shiftKey && evt.key.toLowerCase() === "z";
   const isRedo = ((evt.ctrlKey || evt.metaKey) && evt.key.toLowerCase() === "y") ||
@@ -324,6 +432,8 @@ const initialEdited = computeEditedColor().rgb;
 gradStartColor.value = rgbToHex(initialEdited);
 gradMidColor.value = "#14b8a6";
 gradEndColor.value = "#6366f1";
+recipes = loadRecipes();
+renderRecipeOptions();
 refreshStatus();
 lastState = captureState();
 updateHistoryButtons();
