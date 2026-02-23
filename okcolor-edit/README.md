@@ -11,6 +11,7 @@ A Figma plugin prototype that brings illustration-style color editing to Oklab/O
 - Curve operation for L/a/b channels in Oklab space (L midpoint control in UI)
 - Gamut policy handling: clip, compress, warn+clip
 - Apply edited color to all selected layers with SOLID fills
+- Apply 3-stop Oklch gradient (from the editor stops) to selected layers
 
 ## Local development
 

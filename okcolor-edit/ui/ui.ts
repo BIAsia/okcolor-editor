@@ -31,6 +31,7 @@ const gradPreview = byId<HTMLCanvasElement>("gradPreview");
 const gamutPolicy = byId<HTMLSelectElement>("gamutPolicy");
 const gamutStatus = byId<HTMLDivElement>("gamutStatus");
 const applyBtn = byId<HTMLButtonElement>("apply");
+const applyGradientBtn = byId<HTMLButtonElement>("applyGradient");
 const undoBtn = byId<HTMLButtonElement>("undo");
 const redoBtn = byId<HTMLButtonElement>("redo");
 
@@ -178,15 +179,19 @@ function computeEditedColor(): { rgb: RGB; clipped: boolean } {
   return enforceGamut(safe, gamutPolicy.value as GamutPolicy);
 }
 
+function getGradientStops(): Array<{ position: number; color: RGB }> {
+  return [
+    { position: 0, color: hexToRgb(gradStartColor.value) },
+    { position: Number(gradMidPos.value), color: hexToRgb(gradMidColor.value) },
+    { position: 1, color: hexToRgb(gradEndColor.value) }
+  ];
+}
+
 function renderGradientPreview(): void {
   const ctx = gradPreview.getContext("2d");
   if (!ctx) return;
 
-  const ramp = gradientRampFromStops([
-    { position: 0, color: hexToRgb(gradStartColor.value) },
-    { position: Number(gradMidPos.value), color: hexToRgb(gradMidColor.value) },
-    { position: 1, color: hexToRgb(gradEndColor.value) }
-  ], 24);
+  const ramp = gradientRampFromStops(getGradientStops(), 24);
   const step = gradPreview.width / ramp.length;
 
   for (let i = 0; i < ramp.length; i++) {
@@ -294,6 +299,10 @@ window.addEventListener("keydown", (evt) => {
 applyBtn.onclick = () => {
   const edited = computeEditedColor();
   parent.postMessage({ pluginMessage: { type: "apply-solid-color", color: edited.rgb } }, "*");
+};
+
+applyGradientBtn.onclick = () => {
+  parent.postMessage({ pluginMessage: { type: "apply-gradient", stops: getGradientStops() } }, "*");
 };
 
 const initialEdited = computeEditedColor().rgb;
