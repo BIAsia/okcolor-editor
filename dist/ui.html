@@ -43,8 +43,11 @@
     </div>
 
     <div class="panel">
-      <label>Gradient end hue shift</label>
-      <input id="gradHue" type="range" min="-180" max="180" step="1" value="45" />
+      <label>Gradient stop count</label>
+      <input id="gradStops" type="range" min="2" max="8" step="1" value="3" />
+      <label>Gradient hue shift per stop</label>
+      <input id="gradHue" type="range" min="-180" max="180" step="1" value="30" />
+      <div class="small mono" id="gradHint">3 stops, +30° hue/stop</div>
       <canvas id="gradPreview" width="320" height="28"></canvas>
     </div>
 

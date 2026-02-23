@@ -181,3 +181,21 @@ export function gradientRamp(start: RGB, end: RGB, steps: number): RGB[] {
   }
   return out;
 }
+
+export function gradientRampMulti(stops: RGB[], stepsPerSegment: number): RGB[] {
+  const validStops = stops.filter(Boolean);
+  if (validStops.length < 2) return validStops;
+
+  const segSteps = Math.max(2, Math.floor(stepsPerSegment));
+  const out: RGB[] = [];
+
+  for (let i = 0; i < validStops.length - 1; i++) {
+    const seg = gradientRamp(validStops[i], validStops[i + 1], segSteps);
+    for (let j = 0; j < seg.length; j++) {
+      if (i > 0 && j === 0) continue;
+      out.push(seg[j]);
+    }
+  }
+
+  return out;
+}
