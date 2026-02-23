@@ -22,9 +22,11 @@ const h = byId<HTMLInputElement>("h");
 const curvePreset = byId<HTMLSelectElement>("curvePreset");
 const curveMid = byId<HTMLInputElement>("curveMid");
 const curveHint = byId<HTMLDivElement>("curveHint");
+const gradPalette = byId<HTMLSelectElement>("gradPalette");
+const gradStartColor = byId<HTMLInputElement>("gradStartColor");
 const gradMidPos = byId<HTMLInputElement>("gradMidPos");
-const gradMidHue = byId<HTMLInputElement>("gradMidHue");
-const gradEndHue = byId<HTMLInputElement>("gradEndHue");
+const gradMidColor = byId<HTMLInputElement>("gradMidColor");
+const gradEndColor = byId<HTMLInputElement>("gradEndColor");
 const gradPreview = byId<HTMLCanvasElement>("gradPreview");
 const gamutPolicy = byId<HTMLSelectElement>("gamutPolicy");
 const gamutStatus = byId<HTMLDivElement>("gamutStatus");
@@ -42,9 +44,11 @@ type UiState = {
   h: string;
   curvePreset: CurvePresetId;
   curveMid: string;
+  gradPalette: string;
+  gradStartColor: string;
   gradMidPos: string;
-  gradMidHue: string;
-  gradEndHue: string;
+  gradMidColor: string;
+  gradEndColor: string;
   gamutPolicy: GamutPolicy;
 };
 
@@ -53,6 +57,13 @@ const undoStack: UiState[] = [];
 const redoStack: UiState[] = [];
 let applyingHistory = false;
 let lastState: UiState;
+
+const PALETTES: Record<string, { mid: string; end: string; midPos: string }> = {
+  sunrise: { mid: "#f97316", end: "#fde047", midPos: "0.42" },
+  ocean: { mid: "#06b6d4", end: "#2563eb", midPos: "0.48" },
+  candy: { mid: "#ec4899", end: "#8b5cf6", midPos: "0.52" },
+  complementary: { mid: "#16a34a", end: "#f97316", midPos: "0.50" }
+};
 
 function captureState(): UiState {
   return {
@@ -63,9 +74,11 @@ function captureState(): UiState {
     h: h.value,
     curvePreset: curvePreset.value as CurvePresetId,
     curveMid: curveMid.value,
+    gradPalette: gradPalette.value,
+    gradStartColor: gradStartColor.value,
     gradMidPos: gradMidPos.value,
-    gradMidHue: gradMidHue.value,
-    gradEndHue: gradEndHue.value,
+    gradMidColor: gradMidColor.value,
+    gradEndColor: gradEndColor.value,
     gamutPolicy: gamutPolicy.value as GamutPolicy
   };
 }
@@ -82,9 +95,11 @@ function setControls(state: UiState): void {
   h.value = state.h;
   curvePreset.value = state.curvePreset;
   curveMid.value = state.curveMid;
+  gradPalette.value = state.gradPalette;
+  gradStartColor.value = state.gradStartColor;
   gradMidPos.value = state.gradMidPos;
-  gradMidHue.value = state.gradMidHue;
-  gradEndHue.value = state.gradEndHue;
+  gradMidColor.value = state.gradMidColor;
+  gradEndColor.value = state.gradEndColor;
   gamutPolicy.value = state.gamutPolicy;
 }
 
@@ -93,12 +108,41 @@ function updateHistoryButtons(): void {
   redoBtn.disabled = redoStack.length === 0;
 }
 
+function rgbToHex(rgb: RGB): string {
+  const r = Math.round(Math.min(1, Math.max(0, rgb.r)) * 255);
+  const g = Math.round(Math.min(1, Math.max(0, rgb.g)) * 255);
+  const b = Math.round(Math.min(1, Math.max(0, rgb.b)) * 255);
+  return `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
+}
+
+function hexToRgb(hex: string): RGB {
+  const normalized = hex.replace("#", "").trim();
+  const parsed = Number.parseInt(normalized, 16);
+  const r = ((parsed >> 16) & 255) / 255;
+  const g = ((parsed >> 8) & 255) / 255;
+  const b = (parsed & 255) / 255;
+  return { r, g, b };
+}
+
+function applyPalette(paletteId: string): void {
+  const preset = PALETTES[paletteId];
+  if (!preset) return;
+  gradMidColor.value = preset.mid;
+  gradEndColor.value = preset.end;
+  gradMidPos.value = preset.midPos;
+}
+
 parent.postMessage({ pluginMessage: { type: "request-selection-color" } }, "*");
 
 window.onmessage = (evt: MessageEvent) => {
   const msg = evt.data.pluginMessage;
   if (msg?.type === "selection-color" && msg.color) {
     selectedColor = msg.color as RGB;
+    const editedBase = computeEditedColor().rgb;
+    gradStartColor.value = rgbToHex(editedBase);
+    if (gradPalette.value !== "custom") {
+      applyPalette(gradPalette.value);
+    }
     renderGradientPreview();
   }
 };
@@ -138,13 +182,10 @@ function renderGradientPreview(): void {
   const ctx = gradPreview.getContext("2d");
   if (!ctx) return;
 
-  const start = computeEditedColor().rgb;
-  const mid = adjustInOklch(start, { h: Number(gradMidHue.value) });
-  const end = adjustInOklch(start, { h: Number(gradEndHue.value) });
   const ramp = gradientRampFromStops([
-    { position: 0, color: start },
-    { position: Number(gradMidPos.value), color: mid },
-    { position: 1, color: end }
+    { position: 0, color: hexToRgb(gradStartColor.value) },
+    { position: Number(gradMidPos.value), color: hexToRgb(gradMidColor.value) },
+    { position: 1, color: hexToRgb(gradEndColor.value) }
   ], 24);
   const step = gradPreview.width / ramp.length;
 
@@ -169,12 +210,19 @@ function refreshStatus(): void {
   const curvePoints = getLumaCurve();
   curveHint.textContent = `curve: ${curveLabel(curvePoints)}`;
   curveMid.disabled = (curvePreset.value as CurvePresetId) !== "custom";
+
+  if (gradPalette.value === "custom") {
+    gradStartColor.value = rgbToHex(edited.rgb);
+  }
   renderGradientPreview();
 }
 
 function applyHistoryState(state: UiState): void {
   applyingHistory = true;
   setControls(state);
+  if (gradPalette.value !== "custom") {
+    applyPalette(gradPalette.value);
+  }
   refreshStatus();
   lastState = captureState();
   applyingHistory = false;
@@ -202,10 +250,13 @@ function redo(): void {
   applyHistoryState(next);
 }
 
-[l, a, b, c, h, curvePreset, curveMid, gradMidPos, gradMidHue, gradEndHue, gamutPolicy].forEach((node) => {
+[l, a, b, c, h, curvePreset, curveMid, gradPalette, gradStartColor, gradMidPos, gradMidColor, gradEndColor, gamutPolicy].forEach((node) => {
   node.addEventListener("input", () => {
     if (applyingHistory) return;
     const before = lastState;
+    if (node === gradPalette && gradPalette.value !== "custom") {
+      applyPalette(gradPalette.value);
+    }
     refreshStatus();
     const after = captureState();
     if (!statesEqual(before, after)) {
@@ -245,6 +296,10 @@ applyBtn.onclick = () => {
   parent.postMessage({ pluginMessage: { type: "apply-solid-color", color: edited.rgb } }, "*");
 };
 
+const initialEdited = computeEditedColor().rgb;
+gradStartColor.value = rgbToHex(initialEdited);
+gradMidColor.value = "#14b8a6";
+gradEndColor.value = "#6366f1";
 refreshStatus();
 lastState = captureState();
 updateHistoryButtons();
