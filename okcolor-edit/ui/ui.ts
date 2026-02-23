@@ -3,6 +3,7 @@ import {
   enforceGamut,
   getCurvePreset,
   gradientRampFromStops,
+  computeRegionMaskWeight,
   oklabToOklch,
   oklabToRgbUnclamped,
   oklchToOklab,
@@ -19,6 +20,12 @@ const a = byId<HTMLInputElement>("a");
 const b = byId<HTMLInputElement>("b");
 const c = byId<HTMLInputElement>("c");
 const h = byId<HTMLInputElement>("h");
+const maskFeather = byId<HTMLInputElement>("maskFeather");
+const maskLMin = byId<HTMLInputElement>("maskLMin");
+const maskLMax = byId<HTMLInputElement>("maskLMax");
+const maskCMin = byId<HTMLInputElement>("maskCMin");
+const maskCMax = byId<HTMLInputElement>("maskCMax");
+const maskHint = byId<HTMLDivElement>("maskHint");
 const locale = byId<HTMLSelectElement>("locale");
 const curvePreset = byId<HTMLSelectElement>("curvePreset");
 const curveMid = byId<HTMLInputElement>("curveMid");
@@ -49,6 +56,11 @@ type UiState = {
   b: string;
   c: string;
   h: string;
+  maskFeather: string;
+  maskLMin: string;
+  maskLMax: string;
+  maskCMin: string;
+  maskCMax: string;
   curvePreset: CurvePresetId;
   curveMid: string;
   gradPalette: string;
@@ -93,6 +105,10 @@ type I18nKeys =
   | "bShift"
   | "cShift"
   | "hShift"
+  | "maskFeatherLabel"
+  | "maskLRangeLabel"
+  | "maskCRangeLabel"
+  | "maskHintPrefix"
   | "curvePresetLabel"
   | "curveCustom"
   | "curveContrast"
@@ -139,6 +155,10 @@ const I18N: Record<LocaleId, Record<I18nKeys, string>> = {
     bShift: "b shift",
     cShift: "C shift",
     hShift: "H shift",
+    maskFeatherLabel: "Mask feather",
+    maskLRangeLabel: "L range min/max",
+    maskCRangeLabel: "C range min/max",
+    maskHintPrefix: "mask weight",
     curvePresetLabel: "Curve preset (L channel)",
     curveCustom: "custom midpoint",
     curveContrast: "contrast",
@@ -184,6 +204,10 @@ const I18N: Record<LocaleId, Record<I18nKeys, string>> = {
     bShift: "b 轴偏移",
     cShift: "C 饱和度偏移",
     hShift: "H 色相偏移",
+    maskFeatherLabel: "蒙版羽化",
+    maskLRangeLabel: "L 范围 最小/最大",
+    maskCRangeLabel: "C 范围 最小/最大",
+    maskHintPrefix: "蒙版权重",
     curvePresetLabel: "曲线预设（L 通道）",
     curveCustom: "自定义中点",
     curveContrast: "对比增强",
@@ -231,6 +255,11 @@ function captureState(): UiState {
     b: b.value,
     c: c.value,
     h: h.value,
+    maskFeather: maskFeather.value,
+    maskLMin: maskLMin.value,
+    maskLMax: maskLMax.value,
+    maskCMin: maskCMin.value,
+    maskCMax: maskCMax.value,
     curvePreset: curvePreset.value as CurvePresetId,
     curveMid: curveMid.value,
     gradPalette: gradPalette.value,
@@ -283,6 +312,11 @@ function setControls(state: UiState): void {
   b.value = state.b;
   c.value = state.c;
   h.value = state.h;
+  maskFeather.value = state.maskFeather;
+  maskLMin.value = state.maskLMin;
+  maskLMax.value = state.maskLMax;
+  maskCMin.value = state.maskCMin;
+  maskCMax.value = state.maskCMax;
   curvePreset.value = state.curvePreset;
   curveMid.value = state.curveMid;
   gradPalette.value = state.gradPalette;
@@ -437,9 +471,26 @@ function curveLabel(points: CurvePoint[]): string {
   return points.map((point) => `(${point.x.toFixed(2)},${point.y.toFixed(2)})`).join(" -> ");
 }
 
-function computeEditedColor(): { rgb: RGB; clipped: boolean } {
-  const deltaLab = { l: Number(l.value), a: Number(a.value), b: Number(b.value) };
+function computeEditedColor(): { rgb: RGB; clipped: boolean; maskWeight: number } {
   const baseLab = rgbToOklab(selectedColor);
+  const baseLch = oklabToOklch(baseLab);
+  const lMin = Math.min(Number(maskLMin.value), Number(maskLMax.value));
+  const lMax = Math.max(Number(maskLMin.value), Number(maskLMax.value));
+  const cMin = Math.min(Number(maskCMin.value), Number(maskCMax.value));
+  const cMax = Math.max(Number(maskCMin.value), Number(maskCMax.value));
+  const maskWeight = computeRegionMaskWeight(baseLch, {
+    lMin,
+    lMax,
+    cMin,
+    cMax,
+    feather: Number(maskFeather.value)
+  });
+
+  const deltaLab = {
+    l: Number(l.value) * maskWeight,
+    a: Number(a.value) * maskWeight,
+    b: Number(b.value) * maskWeight
+  };
   const shiftedLab = {
     l: baseLab.l + deltaLab.l,
     a: baseLab.a + deltaLab.a,
@@ -449,8 +500,8 @@ function computeEditedColor(): { rgb: RGB; clipped: boolean } {
   const shiftedLch = oklabToOklch(shiftedLab);
   const adjustedLch = {
     l: shiftedLch.l,
-    c: Math.max(0, shiftedLch.c + Number(c.value)),
-    h: (shiftedLch.h + Number(h.value) + 360) % 360
+    c: Math.max(0, shiftedLch.c + Number(c.value) * maskWeight),
+    h: (shiftedLch.h + Number(h.value) * maskWeight + 360) % 360
   };
 
   const labAfterLch = oklchToOklab(adjustedLch);
@@ -462,7 +513,8 @@ function computeEditedColor(): { rgb: RGB; clipped: boolean } {
   };
 
   const rawRgb = oklabToRgbUnclamped(labAfterCurve);
-  return enforceGamut(rawRgb, gamutPolicy.value as GamutPolicy);
+  const gamut = enforceGamut(rawRgb, gamutPolicy.value as GamutPolicy);
+  return { ...gamut, maskWeight };
 }
 
 function getGradientStops(): Array<{ position: number; color: RGB }> {
@@ -501,6 +553,8 @@ function refreshStatus(): void {
   const curvePoints = getLumaCurve();
   curveHint.textContent = `${t("curveHintPrefix")}: ${curveLabel(curvePoints)}`;
   curveMid.disabled = (curvePreset.value as CurvePresetId) !== "custom";
+
+  maskHint.textContent = `${t("maskHintPrefix")}: ${edited.maskWeight.toFixed(2)}`;
 
   if (gradPalette.value === "custom") {
     gradStartColor.value = rgbToHex(edited.rgb);
@@ -541,7 +595,7 @@ function redo(): void {
   applyHistoryState(next);
 }
 
-[l, a, b, c, h, curvePreset, curveMid, gradPalette, gradStartColor, gradMidPos, gradMidColor, gradEndColor, gamutPolicy].forEach((node) => {
+[l, a, b, c, h, maskFeather, maskLMin, maskLMax, maskCMin, maskCMax, curvePreset, curveMid, gradPalette, gradStartColor, gradMidPos, gradMidColor, gradEndColor, gamutPolicy].forEach((node) => {
   node.addEventListener("input", () => {
     if (applyingHistory) return;
     const before = lastState;

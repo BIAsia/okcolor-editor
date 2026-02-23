@@ -11,7 +11,8 @@ import {
   gradientRamp,
   gradientRampFromStops,
   enforceGamut,
-  getCurvePreset
+  getCurvePreset,
+  computeRegionMaskWeight
 } from "../src/color";
 
 describe("okcolor conversion", () => {
@@ -108,5 +109,25 @@ describe("gradient and gamut", () => {
     expect(out.rgb.r).toBeLessThanOrEqual(1);
     expect(out.rgb.g).toBeLessThanOrEqual(1);
     expect(out.rgb.b).toBeLessThanOrEqual(1);
+  });
+
+  it("computes region mask weight from l/c ranges", () => {
+    const full = computeRegionMaskWeight(
+      { l: 0.6, c: 0.12, h: 20 },
+      { lMin: 0.2, lMax: 0.9, cMin: 0.05, cMax: 0.2, feather: 0.05 }
+    );
+    const outside = computeRegionMaskWeight(
+      { l: 0.1, c: 0.12, h: 20 },
+      { lMin: 0.2, lMax: 0.9, cMin: 0.05, cMax: 0.2, feather: 0.05 }
+    );
+    const feathered = computeRegionMaskWeight(
+      { l: 0.22, c: 0.06, h: 20 },
+      { lMin: 0.2, lMax: 0.9, cMin: 0.05, cMax: 0.2, feather: 0.05 }
+    );
+
+    expect(full).toBeCloseTo(1, 3);
+    expect(outside).toBe(0);
+    expect(feathered).toBeGreaterThan(0);
+    expect(feathered).toBeLessThan(1);
   });
 });
