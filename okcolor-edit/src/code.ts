@@ -89,7 +89,6 @@ figma.ui.onmessage = (msg) => {
     for (const node of figma.currentPage.selection) {
       if (!("fills" in node)) continue;
       const fills = node.fills as ReadonlyArray<Paint>;
-      if (fills.length === 0) continue;
 
       const nextGradient: GradientPaint = {
         type: "GRADIENT_LINEAR",
@@ -100,8 +99,17 @@ figma.ui.onmessage = (msg) => {
         gradientStops
       };
 
-      node.fills = [nextGradient, ...fills.filter((paint) => paint.type !== "SOLID")];
-      updatedNodes += 1;
+      const next =
+        fills.length === 0
+          ? [nextGradient]
+          : [nextGradient, ...fills.filter((paint) => paint.type !== "SOLID" && paint.type !== "GRADIENT_LINEAR")];
+
+      try {
+        node.fills = next;
+        updatedNodes += 1;
+      } catch {
+        // Some nodes expose readonly paints at runtime; skip them.
+      }
     }
 
     if (updatedNodes > 0) {
