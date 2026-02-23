@@ -22,7 +22,7 @@
 
 - Region masks by luminance/chroma range
 - Histogram and waveform in Oklab channels
-- Plug-in side panel polish and i18n
+- Plug-in side panel polish and i18n (implemented: EN/zh-CN toggle + localized UI copy)
 
 ## done ahead
 
