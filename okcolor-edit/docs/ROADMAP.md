@@ -15,7 +15,7 @@
 
 - Multi-stop gradient editor in Oklch with editable stop colors and palette presets
 - Preset curve packs (contrast, filmic, pastel recover)
-- Gamut warning and clipping strategy options
+- Gamut warning and clipping strategy options (implemented)
 - Batch apply to multi-selection
 
 ## v0.3
