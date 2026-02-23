@@ -11,6 +11,7 @@
     label { display:block; margin:6px 0 4px; font-weight:600; }
     input[type="range"] { width:100%; }
     input[type="color"] { width: 100%; height: 34px; border: 1px solid #ddd5c8; border-radius: 6px; background: #fff; }
+    input[type="text"] { width: 100%; box-sizing: border-box; padding: 7px 8px; border: 1px solid #ddd5c8; border-radius: 6px; background: #fff; }
     button { border:0; background:var(--accent); color:#fff; border-radius:8px; padding:8px 10px; cursor:pointer; }
     button:disabled { opacity: 0.45; cursor: not-allowed; }
     .row { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
@@ -69,6 +70,20 @@
       <label>End stop color</label>
       <input id="gradEndColor" type="color" value="#6366f1" />
       <canvas id="gradPreview" width="320" height="28"></canvas>
+    </div>
+
+    <div class="panel">
+      <label>Adjustment recipes</label>
+      <select id="recipeList">
+        <option value="">(select saved recipe)</option>
+      </select>
+      <div class="row">
+        <button id="loadRecipe" type="button">Load</button>
+        <button id="deleteRecipe" type="button">Delete</button>
+      </div>
+      <label>Recipe name</label>
+      <input id="recipeName" type="text" placeholder="e.g. soft filmic teal" />
+      <button id="saveRecipe" type="button">Save current settings</button>
     </div>
 
     <div class="panel">

@@ -22,5 +22,8 @@
 
 - Region masks by luminance/chroma range
 - Histogram and waveform in Oklab channels
-- Save/load adjustment recipes
 - Plug-in side panel polish and i18n
+
+## done ahead
+
+- Save/load adjustment recipes (plugin-local storage)
