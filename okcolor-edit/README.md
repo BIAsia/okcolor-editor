@@ -5,7 +5,7 @@ A Figma plugin prototype that brings illustration-style color editing to Oklab/O
 ## Features (current)
 
 - Oklab/Oklch conversion
-- Oklch gradient interpolation (shortest hue path) with preview ramp
+- Oklch multi-stop gradient interpolation (shortest hue path) with preview ramp
 - Oklab channel shifts (L/a/b)
 - Oklch channel shifts (L/C/H)
 - Curve operation for L/a/b channels in Oklab space (L midpoint control in UI)

@@ -210,3 +210,45 @@ export function gradientRamp(start: RGB, end: RGB, steps: number): RGB[] {
   }
   return out;
 }
+
+export type GradientStop = {
+  position: number;
+  color: RGB;
+};
+
+export function gradientRampFromStops(stops: GradientStop[], steps: number): RGB[] {
+  const count = Math.max(2, Math.floor(steps));
+  const normalizedStops = [...stops]
+    .map((stop) => ({
+      position: clamp01(stop.position),
+      color: stop.color
+    }))
+    .sort((left, right) => left.position - right.position);
+
+  if (normalizedStops.length < 2) {
+    const fallback = normalizedStops[0]?.color ?? { r: 0, g: 0, b: 0 };
+    return Array.from({ length: count }, () => ({ ...fallback }));
+  }
+
+  const lchStops = normalizedStops.map((stop) => ({
+    position: stop.position,
+    lch: oklabToOklch(rgbToOklab(stop.color))
+  }));
+
+  const out: RGB[] = [];
+  for (let i = 0; i < count; i++) {
+    const t = i / (count - 1);
+
+    let rightIndex = lchStops.findIndex((stop) => t <= stop.position);
+    if (rightIndex <= 0) rightIndex = 1;
+    if (rightIndex === -1) rightIndex = lchStops.length - 1;
+
+    const left = lchStops[rightIndex - 1];
+    const right = lchStops[rightIndex];
+    const segmentSpan = Math.max(1e-6, right.position - left.position);
+    const localT = clamp01((t - left.position) / segmentSpan);
+    out.push(oklabToRgb(oklchToOklab(mixOklch(left.lch, right.lch, localT))));
+  }
+
+  return out;
+}

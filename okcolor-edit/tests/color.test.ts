@@ -8,6 +8,7 @@ import {
   applyCurve,
   applyLabCurves,
   gradientRamp,
+  gradientRampFromStops,
   enforceGamut,
   getCurvePreset
 } from "../src/color";
@@ -73,6 +74,18 @@ describe("gradient and gamut", () => {
   it("builds oklch gradient ramp with requested steps", () => {
     const ramp = gradientRamp({ r: 1, g: 0, b: 0 }, { r: 0, g: 0, b: 1 }, 12);
     expect(ramp.length).toBe(12);
+  });
+
+  it("builds a multi-stop oklch ramp", () => {
+    const ramp = gradientRampFromStops([
+      { position: 0, color: { r: 1, g: 0, b: 0 } },
+      { position: 0.4, color: { r: 0, g: 1, b: 0 } },
+      { position: 1, color: { r: 0, g: 0, b: 1 } }
+    ], 15);
+
+    expect(ramp.length).toBe(15);
+    expect(ramp[0].r).toBeCloseTo(1, 2);
+    expect(ramp[ramp.length - 1].b).toBeCloseTo(1, 2);
   });
 
   it("clips gamut overflow", () => {

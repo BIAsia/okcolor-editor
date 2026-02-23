@@ -2,7 +2,7 @@ import {
   adjustInOklab,
   adjustInOklch,
   applyLabCurves,
-  gradientRamp,
+  gradientRampFromStops,
   oklabToRgb,
   rgbToOklab,
   enforceGamut,
@@ -22,7 +22,9 @@ const h = byId<HTMLInputElement>("h");
 const curvePreset = byId<HTMLSelectElement>("curvePreset");
 const curveMid = byId<HTMLInputElement>("curveMid");
 const curveHint = byId<HTMLDivElement>("curveHint");
-const gradHue = byId<HTMLInputElement>("gradHue");
+const gradMidPos = byId<HTMLInputElement>("gradMidPos");
+const gradMidHue = byId<HTMLInputElement>("gradMidHue");
+const gradEndHue = byId<HTMLInputElement>("gradEndHue");
 const gradPreview = byId<HTMLCanvasElement>("gradPreview");
 const gamutPolicy = byId<HTMLSelectElement>("gamutPolicy");
 const gamutStatus = byId<HTMLDivElement>("gamutStatus");
@@ -40,7 +42,9 @@ type UiState = {
   h: string;
   curvePreset: CurvePresetId;
   curveMid: string;
-  gradHue: string;
+  gradMidPos: string;
+  gradMidHue: string;
+  gradEndHue: string;
   gamutPolicy: GamutPolicy;
 };
 
@@ -59,7 +63,9 @@ function captureState(): UiState {
     h: h.value,
     curvePreset: curvePreset.value as CurvePresetId,
     curveMid: curveMid.value,
-    gradHue: gradHue.value,
+    gradMidPos: gradMidPos.value,
+    gradMidHue: gradMidHue.value,
+    gradEndHue: gradEndHue.value,
     gamutPolicy: gamutPolicy.value as GamutPolicy
   };
 }
@@ -76,7 +82,9 @@ function setControls(state: UiState): void {
   h.value = state.h;
   curvePreset.value = state.curvePreset;
   curveMid.value = state.curveMid;
-  gradHue.value = state.gradHue;
+  gradMidPos.value = state.gradMidPos;
+  gradMidHue.value = state.gradMidHue;
+  gradEndHue.value = state.gradEndHue;
   gamutPolicy.value = state.gamutPolicy;
 }
 
@@ -131,8 +139,13 @@ function renderGradientPreview(): void {
   if (!ctx) return;
 
   const start = computeEditedColor().rgb;
-  const end = adjustInOklch(start, { h: Number(gradHue.value) });
-  const ramp = gradientRamp(start, end, 24);
+  const mid = adjustInOklch(start, { h: Number(gradMidHue.value) });
+  const end = adjustInOklch(start, { h: Number(gradEndHue.value) });
+  const ramp = gradientRampFromStops([
+    { position: 0, color: start },
+    { position: Number(gradMidPos.value), color: mid },
+    { position: 1, color: end }
+  ], 24);
   const step = gradPreview.width / ramp.length;
 
   for (let i = 0; i < ramp.length; i++) {
@@ -189,7 +202,7 @@ function redo(): void {
   applyHistoryState(next);
 }
 
-[l, a, b, c, h, curvePreset, curveMid, gradHue, gamutPolicy].forEach((node) => {
+[l, a, b, c, h, curvePreset, curveMid, gradMidPos, gradMidHue, gradEndHue, gamutPolicy].forEach((node) => {
   node.addEventListener("input", () => {
     if (applyingHistory) return;
     const before = lastState;
