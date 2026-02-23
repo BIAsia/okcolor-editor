@@ -58,9 +58,13 @@
         <option value="filmic" data-i18n="curveFilmic">filmic</option>
         <option value="pastel-recover" data-i18n="curvePastel">pastel recover</option>
       </select>
-      <label data-i18n="curveMidLabel">Curve midpoint (custom only)</label>
+      <label data-i18n="curveMidLabel">Curve midpoint (L, custom only)</label>
       <input id="curveMid" type="range" min="0" max="1" step="0.01" value="0.5" />
-      <div class="small mono" id="curveHint">curve: (0,0) -> (0.5,0.5) -> (1,1)</div>
+      <label data-i18n="curveMidALabel">Curve midpoint (a, custom)</label>
+      <input id="curveMidA" type="range" min="0" max="1" step="0.01" value="0.5" />
+      <label data-i18n="curveMidBLabel">Curve midpoint (b, custom)</label>
+      <input id="curveMidB" type="range" min="0" max="1" step="0.01" value="0.5" />
+      <div class="small mono" id="curveHint">curve L/a/b: (0,0) -> (0.5,0.5) -> (1,1)</div>
     </div>
 
     <div class="panel">
