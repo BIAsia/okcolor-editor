@@ -37,6 +37,12 @@ const gradPalette = byId<HTMLSelectElement>("gradPalette");
 const gradStartColor = byId<HTMLInputElement>("gradStartColor");
 const gradMidPos = byId<HTMLInputElement>("gradMidPos");
 const gradMidColor = byId<HTMLInputElement>("gradMidColor");
+const gradStop2Enabled = byId<HTMLInputElement>("gradStop2Enabled");
+const gradStop2Pos = byId<HTMLInputElement>("gradStop2Pos");
+const gradStop2Color = byId<HTMLInputElement>("gradStop2Color");
+const gradStop4Enabled = byId<HTMLInputElement>("gradStop4Enabled");
+const gradStop4Pos = byId<HTMLInputElement>("gradStop4Pos");
+const gradStop4Color = byId<HTMLInputElement>("gradStop4Color");
 const gradEndColor = byId<HTMLInputElement>("gradEndColor");
 const gradPreview = byId<HTMLCanvasElement>("gradPreview");
 const recipeList = byId<HTMLSelectElement>("recipeList");
@@ -73,6 +79,12 @@ type UiState = {
   gradStartColor: string;
   gradMidPos: string;
   gradMidColor: string;
+  gradStop2Enabled: string;
+  gradStop2Pos: string;
+  gradStop2Color: string;
+  gradStop4Enabled: string;
+  gradStop4Pos: string;
+  gradStop4Color: string;
   gradEndColor: string;
   gamutPolicy: GamutPolicy;
 };
@@ -140,6 +152,8 @@ type I18nKeys =
   | "startStopLabel"
   | "middlePosLabel"
   | "middleColorLabel"
+  | "extraStop2Label"
+  | "extraStop4Label"
   | "endStopLabel"
   | "recipesLabel"
   | "recipePlaceholder"
@@ -194,6 +208,8 @@ const I18N: Record<LocaleId, Record<I18nKeys, string>> = {
     startStopLabel: "Start stop color",
     middlePosLabel: "Middle stop position",
     middleColorLabel: "Middle stop color",
+    extraStop2Label: "Extra stop A",
+    extraStop4Label: "Extra stop B",
     endStopLabel: "End stop color",
     recipesLabel: "Adjustment recipes",
     recipePlaceholder: "(select saved recipe)",
@@ -247,6 +263,8 @@ const I18N: Record<LocaleId, Record<I18nKeys, string>> = {
     startStopLabel: "起点颜色",
     middlePosLabel: "中间点位置",
     middleColorLabel: "中间点颜色",
+    extraStop2Label: "额外节点 A",
+    extraStop4Label: "额外节点 B",
     endStopLabel: "终点颜色",
     recipesLabel: "调整配方",
     recipePlaceholder: "（选择已保存配方）",
@@ -293,6 +311,12 @@ function captureState(): UiState {
     gradStartColor: gradStartColor.value,
     gradMidPos: gradMidPos.value,
     gradMidColor: gradMidColor.value,
+    gradStop2Enabled: gradStop2Enabled.checked ? "1" : "0",
+    gradStop2Pos: gradStop2Pos.value,
+    gradStop2Color: gradStop2Color.value,
+    gradStop4Enabled: gradStop4Enabled.checked ? "1" : "0",
+    gradStop4Pos: gradStop4Pos.value,
+    gradStop4Color: gradStop4Color.value,
     gradEndColor: gradEndColor.value,
     gamutPolicy: gamutPolicy.value as GamutPolicy
   };
@@ -353,6 +377,12 @@ function setControls(state: UiState): void {
   gradStartColor.value = state.gradStartColor;
   gradMidPos.value = state.gradMidPos;
   gradMidColor.value = state.gradMidColor;
+  gradStop2Enabled.checked = state.gradStop2Enabled === "1";
+  gradStop2Pos.value = state.gradStop2Pos;
+  gradStop2Color.value = state.gradStop2Color;
+  gradStop4Enabled.checked = state.gradStop4Enabled === "1";
+  gradStop4Pos.value = state.gradStop4Pos;
+  gradStop4Color.value = state.gradStop4Color;
   gradEndColor.value = state.gradEndColor;
   gamutPolicy.value = state.gamutPolicy;
 }
@@ -482,6 +512,8 @@ function applyPalette(paletteId: string): void {
   gradMidColor.value = preset.mid;
   gradEndColor.value = preset.end;
   gradMidPos.value = preset.midPos;
+  gradStop2Enabled.checked = false;
+  gradStop4Enabled.checked = false;
 }
 
 parent.postMessage({ pluginMessage: { type: "request-selection-color" } }, "*");
@@ -589,11 +621,21 @@ function computeEditedColor(): { rgb: RGB; clipped: boolean; maskWeight: number 
 }
 
 function getGradientStops(): Array<{ position: number; color: RGB }> {
-  return [
+  const stops: Array<{ position: number; color: RGB }> = [
     { position: 0, color: hexToRgb(gradStartColor.value) },
     { position: Number(gradMidPos.value), color: hexToRgb(gradMidColor.value) },
     { position: 1, color: hexToRgb(gradEndColor.value) }
   ];
+
+  if (gradStop2Enabled.checked) {
+    stops.push({ position: Number(gradStop2Pos.value), color: hexToRgb(gradStop2Color.value) });
+  }
+  if (gradStop4Enabled.checked) {
+    stops.push({ position: Number(gradStop4Pos.value), color: hexToRgb(gradStop4Color.value) });
+  }
+
+  stops.sort((left, right) => left.position - right.position);
+  return stops;
 }
 
 function renderGradientPreview(): void {
@@ -608,6 +650,13 @@ function renderGradientPreview(): void {
     ctx.fillStyle = `rgb(${Math.round(v.r * 255)} ${Math.round(v.g * 255)} ${Math.round(v.b * 255)})`;
     ctx.fillRect(i * step, 0, Math.ceil(step), gradPreview.height);
   }
+}
+
+function refreshExtraStopControls(): void {
+  gradStop2Pos.disabled = !gradStop2Enabled.checked;
+  gradStop2Color.disabled = !gradStop2Enabled.checked;
+  gradStop4Pos.disabled = !gradStop4Enabled.checked;
+  gradStop4Color.disabled = !gradStop4Enabled.checked;
 }
 
 function refreshStatus(): void {
@@ -632,6 +681,7 @@ function refreshStatus(): void {
   if (gradPalette.value === "custom") {
     gradStartColor.value = rgbToHex(edited.rgb);
   }
+  refreshExtraStopControls();
   renderGradientPreview();
 }
 
@@ -668,7 +718,7 @@ function redo(): void {
   applyHistoryState(next);
 }
 
-[l, a, b, c, h, maskFeather, maskLMin, maskLMax, maskCMin, maskCMax, curvePack, curvePreset, curveMid, curveMidA, curveMidB, gradPalette, gradStartColor, gradMidPos, gradMidColor, gradEndColor, gamutPolicy].forEach((node) => {
+[l, a, b, c, h, maskFeather, maskLMin, maskLMax, maskCMin, maskCMax, curvePack, curvePreset, curveMid, curveMidA, curveMidB, gradPalette, gradStartColor, gradMidPos, gradMidColor, gradStop2Enabled, gradStop2Pos, gradStop2Color, gradStop4Enabled, gradStop4Pos, gradStop4Color, gradEndColor, gamutPolicy].forEach((node) => {
   node.addEventListener("input", () => {
     if (applyingHistory) return;
     const before = lastState;
