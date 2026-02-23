@@ -27,6 +27,7 @@ const maskCMin = byId<HTMLInputElement>("maskCMin");
 const maskCMax = byId<HTMLInputElement>("maskCMax");
 const maskHint = byId<HTMLDivElement>("maskHint");
 const locale = byId<HTMLSelectElement>("locale");
+const curvePack = byId<HTMLSelectElement>("curvePack");
 const curvePreset = byId<HTMLSelectElement>("curvePreset");
 const curveMid = byId<HTMLInputElement>("curveMid");
 const curveMidA = byId<HTMLInputElement>("curveMidA");
@@ -63,6 +64,7 @@ type UiState = {
   maskLMax: string;
   maskCMin: string;
   maskCMax: string;
+  curvePack: Exclude<CurvePresetId, "custom"> | "custom";
   curvePreset: CurvePresetId;
   curveMid: string;
   curveMidA: string;
@@ -94,6 +96,12 @@ const PALETTES: Record<string, { mid: string; end: string; midPos: string }> = {
   complementary: { mid: "#16a34a", end: "#f97316", midPos: "0.50" }
 };
 
+const CURVE_PACKS: Record<Exclude<CurvePresetId, "custom">, { lPreset: Exclude<CurvePresetId, "custom">; midA: string; midB: string }> = {
+  contrast: { lPreset: "contrast", midA: "0.58", midB: "0.58" },
+  filmic: { lPreset: "filmic", midA: "0.46", midB: "0.44" },
+  "pastel-recover": { lPreset: "pastel-recover", midA: "0.52", midB: "0.52" }
+};
+
 const recipeStorageKey = "okcolor-edit:recipes:v1";
 const localeStorageKey = "okcolor-edit:locale:v1";
 let recipes: SavedRecipe[] = [];
@@ -113,6 +121,8 @@ type I18nKeys =
   | "maskLRangeLabel"
   | "maskCRangeLabel"
   | "maskHintPrefix"
+  | "curvePackLabel"
+  | "curvePackCustom"
   | "curvePresetLabel"
   | "curveCustom"
   | "curveContrast"
@@ -165,6 +175,8 @@ const I18N: Record<LocaleId, Record<I18nKeys, string>> = {
     maskLRangeLabel: "L range min/max",
     maskCRangeLabel: "C range min/max",
     maskHintPrefix: "mask weight",
+    curvePackLabel: "Curve pack",
+    curvePackCustom: "custom",
     curvePresetLabel: "Curve preset (L channel)",
     curveCustom: "custom midpoint",
     curveContrast: "contrast",
@@ -216,6 +228,8 @@ const I18N: Record<LocaleId, Record<I18nKeys, string>> = {
     maskLRangeLabel: "L 范围 最小/最大",
     maskCRangeLabel: "C 范围 最小/最大",
     maskHintPrefix: "蒙版权重",
+    curvePackLabel: "曲线组合包",
+    curvePackCustom: "自定义",
     curvePresetLabel: "曲线预设（L 通道）",
     curveCustom: "自定义中点",
     curveContrast: "对比增强",
@@ -270,6 +284,7 @@ function captureState(): UiState {
     maskLMax: maskLMax.value,
     maskCMin: maskCMin.value,
     maskCMax: maskCMax.value,
+    curvePack: curvePack.value as Exclude<CurvePresetId, "custom"> | "custom",
     curvePreset: curvePreset.value as CurvePresetId,
     curveMid: curveMid.value,
     curveMidA: curveMidA.value,
@@ -329,6 +344,7 @@ function setControls(state: UiState): void {
   maskLMax.value = state.maskLMax;
   maskCMin.value = state.maskCMin;
   maskCMax.value = state.maskCMax;
+  curvePack.value = state.curvePack;
   curvePreset.value = state.curvePreset;
   curveMid.value = state.curveMid;
   curveMidA.value = state.curveMidA;
@@ -351,6 +367,7 @@ function normalizeRecipeState(state: Partial<UiState> | undefined): UiState {
   return {
     ...fallback,
     ...state,
+    curvePack: typeof state?.curvePack === "string" ? state.curvePack as Exclude<CurvePresetId, "custom"> | "custom" : fallback.curvePack,
     curveMidA: typeof state?.curveMidA === "string" ? state.curveMidA : fallback.curveMidA,
     curveMidB: typeof state?.curveMidB === "string" ? state.curveMidB : fallback.curveMidB
   };
@@ -481,6 +498,19 @@ window.onmessage = (evt: MessageEvent) => {
     renderGradientPreview();
   }
 };
+
+function applyCurvePack(packId: Exclude<CurvePresetId, "custom"> | "custom"): void {
+  if (packId === "custom") {
+    curvePreset.value = "custom";
+    return;
+  }
+
+  const pack = CURVE_PACKS[packId];
+  if (!pack) return;
+  curvePreset.value = pack.lPreset;
+  curveMidA.value = pack.midA;
+  curveMidB.value = pack.midB;
+}
 
 function getLumaCurve(): CurvePoint[] {
   const preset = curvePreset.value as CurvePresetId;
@@ -638,12 +668,18 @@ function redo(): void {
   applyHistoryState(next);
 }
 
-[l, a, b, c, h, maskFeather, maskLMin, maskLMax, maskCMin, maskCMax, curvePreset, curveMid, curveMidA, curveMidB, gradPalette, gradStartColor, gradMidPos, gradMidColor, gradEndColor, gamutPolicy].forEach((node) => {
+[l, a, b, c, h, maskFeather, maskLMin, maskLMax, maskCMin, maskCMax, curvePack, curvePreset, curveMid, curveMidA, curveMidB, gradPalette, gradStartColor, gradMidPos, gradMidColor, gradEndColor, gamutPolicy].forEach((node) => {
   node.addEventListener("input", () => {
     if (applyingHistory) return;
     const before = lastState;
     if (node === gradPalette && gradPalette.value !== "custom") {
       applyPalette(gradPalette.value);
+    }
+    if (node === curvePack) {
+      applyCurvePack(curvePack.value as Exclude<CurvePresetId, "custom"> | "custom");
+    }
+    if (node === curvePreset && curvePack.value !== "custom") {
+      curvePack.value = "custom";
     }
     refreshStatus();
     const after = captureState();
