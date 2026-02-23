@@ -19,6 +19,7 @@ const a = byId<HTMLInputElement>("a");
 const b = byId<HTMLInputElement>("b");
 const c = byId<HTMLInputElement>("c");
 const h = byId<HTMLInputElement>("h");
+const locale = byId<HTMLSelectElement>("locale");
 const curvePreset = byId<HTMLSelectElement>("curvePreset");
 const curveMid = byId<HTMLInputElement>("curveMid");
 const curveHint = byId<HTMLDivElement>("curveHint");
@@ -78,7 +79,150 @@ const PALETTES: Record<string, { mid: string; end: string; midPos: string }> = {
 };
 
 const recipeStorageKey = "okcolor-edit:recipes:v1";
+const localeStorageKey = "okcolor-edit:locale:v1";
 let recipes: SavedRecipe[] = [];
+
+type LocaleId = "en" | "zh-CN";
+
+type I18nKeys =
+  | "title"
+  | "subtitle"
+  | "languageLabel"
+  | "lShift"
+  | "aShift"
+  | "bShift"
+  | "cShift"
+  | "hShift"
+  | "curvePresetLabel"
+  | "curveCustom"
+  | "curveContrast"
+  | "curveFilmic"
+  | "curvePastel"
+  | "curveMidLabel"
+  | "gradientPaletteLabel"
+  | "paletteCustom"
+  | "paletteSunrise"
+  | "paletteOcean"
+  | "paletteCandy"
+  | "paletteComplementary"
+  | "startStopLabel"
+  | "middlePosLabel"
+  | "middleColorLabel"
+  | "endStopLabel"
+  | "recipesLabel"
+  | "recipePlaceholder"
+  | "load"
+  | "delete"
+  | "recipeNameLabel"
+  | "recipeNamePlaceholder"
+  | "saveCurrent"
+  | "gamutPolicyLabel"
+  | "gamutClip"
+  | "gamutCompress"
+  | "gamutWarn"
+  | "undo"
+  | "redo"
+  | "applySolid"
+  | "applyGradient"
+  | "tip"
+  | "inGamut"
+  | "outOfGamut"
+  | "curveHintPrefix";
+
+const I18N: Record<LocaleId, Record<I18nKeys, string>> = {
+  en: {
+    title: "okcolor edit",
+    subtitle: "Oklab/Oklch conversion, gradient, curve, gamut policy",
+    languageLabel: "Language",
+    lShift: "L shift",
+    aShift: "a shift",
+    bShift: "b shift",
+    cShift: "C shift",
+    hShift: "H shift",
+    curvePresetLabel: "Curve preset (L channel)",
+    curveCustom: "custom midpoint",
+    curveContrast: "contrast",
+    curveFilmic: "filmic",
+    curvePastel: "pastel recover",
+    curveMidLabel: "Curve midpoint (custom only)",
+    gradientPaletteLabel: "Gradient palette",
+    paletteCustom: "custom",
+    paletteSunrise: "sunrise",
+    paletteOcean: "ocean",
+    paletteCandy: "candy",
+    paletteComplementary: "complementary",
+    startStopLabel: "Start stop color",
+    middlePosLabel: "Middle stop position",
+    middleColorLabel: "Middle stop color",
+    endStopLabel: "End stop color",
+    recipesLabel: "Adjustment recipes",
+    recipePlaceholder: "(select saved recipe)",
+    load: "Load",
+    delete: "Delete",
+    recipeNameLabel: "Recipe name",
+    recipeNamePlaceholder: "e.g. soft filmic teal",
+    saveCurrent: "Save current settings",
+    gamutPolicyLabel: "Gamut policy",
+    gamutClip: "clip",
+    gamutCompress: "compress",
+    gamutWarn: "warn + clip",
+    undo: "Undo",
+    redo: "Redo",
+    applySolid: "Apply solid",
+    applyGradient: "Apply gradient",
+    tip: "Tip: select a layer with SOLID fill first.",
+    inGamut: "In gamut",
+    outOfGamut: "Out-of-gamut handled by policy",
+    curveHintPrefix: "curve"
+  },
+  "zh-CN": {
+    title: "okcolor edit",
+    subtitle: "Oklab/Oklch 转换、渐变、曲线、色域策略",
+    languageLabel: "语言",
+    lShift: "L 明度偏移",
+    aShift: "a 轴偏移",
+    bShift: "b 轴偏移",
+    cShift: "C 饱和度偏移",
+    hShift: "H 色相偏移",
+    curvePresetLabel: "曲线预设（L 通道）",
+    curveCustom: "自定义中点",
+    curveContrast: "对比增强",
+    curveFilmic: "电影感",
+    curvePastel: "粉彩恢复",
+    curveMidLabel: "曲线中点（仅自定义）",
+    gradientPaletteLabel: "渐变色板",
+    paletteCustom: "自定义",
+    paletteSunrise: "日出",
+    paletteOcean: "海洋",
+    paletteCandy: "糖果",
+    paletteComplementary: "互补",
+    startStopLabel: "起点颜色",
+    middlePosLabel: "中间点位置",
+    middleColorLabel: "中间点颜色",
+    endStopLabel: "终点颜色",
+    recipesLabel: "调整配方",
+    recipePlaceholder: "（选择已保存配方）",
+    load: "加载",
+    delete: "删除",
+    recipeNameLabel: "配方名称",
+    recipeNamePlaceholder: "例如：柔和电影感青色",
+    saveCurrent: "保存当前设置",
+    gamutPolicyLabel: "色域策略",
+    gamutClip: "裁剪",
+    gamutCompress: "压缩",
+    gamutWarn: "警告 + 裁剪",
+    undo: "撤销",
+    redo: "重做",
+    applySolid: "应用纯色",
+    applyGradient: "应用渐变",
+    tip: "提示：先选择带有 SOLID 填充的图层。",
+    inGamut: "色域内",
+    outOfGamut: "超出色域，已按策略处理",
+    curveHintPrefix: "曲线"
+  }
+};
+
+let currentLocale: LocaleId = "en";
 
 function captureState(): UiState {
   return {
@@ -100,6 +244,37 @@ function captureState(): UiState {
 
 function statesEqual(left: UiState, right: UiState): boolean {
   return JSON.stringify(left) === JSON.stringify(right);
+}
+
+function resolveLocale(candidate: string | null): LocaleId {
+  return candidate === "zh-CN" ? "zh-CN" : "en";
+}
+
+function t(key: I18nKeys): string {
+  return I18N[currentLocale][key];
+}
+
+function applyLocale(localeId: LocaleId): void {
+  currentLocale = localeId;
+  localStorage.setItem(localeStorageKey, localeId);
+  locale.value = localeId;
+
+  const textNodes = document.querySelectorAll<HTMLElement>("[data-i18n]");
+  for (const node of textNodes) {
+    const key = node.dataset.i18n as I18nKeys | undefined;
+    if (!key) continue;
+    node.textContent = t(key);
+  }
+
+  const placeholderNodes = document.querySelectorAll<HTMLInputElement>("[data-i18n-placeholder]");
+  for (const node of placeholderNodes) {
+    const key = node.dataset.i18nPlaceholder as I18nKeys | undefined;
+    if (!key) continue;
+    node.placeholder = t(key);
+  }
+
+  renderRecipeOptions(recipeList.value);
+  refreshStatus();
 }
 
 function setControls(state: UiState): void {
@@ -144,7 +319,7 @@ function renderRecipeOptions(selectedName = ""): void {
 
   const placeholder = document.createElement("option");
   placeholder.value = "";
-  placeholder.textContent = "(select saved recipe)";
+  placeholder.textContent = t("recipePlaceholder");
   recipeList.appendChild(placeholder);
 
   for (const recipe of recipes) {
@@ -316,15 +491,15 @@ function refreshStatus(): void {
   const edited = computeEditedColor();
   const policy = gamutPolicy.value;
   if (edited.clipped) {
-    gamutStatus.textContent = `Out-of-gamut handled by policy: ${policy}`;
+    gamutStatus.textContent = `${t("outOfGamut")}: ${policy}`;
     gamutStatus.className = "small warn";
   } else {
-    gamutStatus.textContent = "In gamut";
+    gamutStatus.textContent = t("inGamut");
     gamutStatus.className = "small";
   }
 
   const curvePoints = getLumaCurve();
-  curveHint.textContent = `curve: ${curveLabel(curvePoints)}`;
+  curveHint.textContent = `${t("curveHintPrefix")}: ${curveLabel(curvePoints)}`;
   curveMid.disabled = (curvePreset.value as CurvePresetId) !== "custom";
 
   if (gradPalette.value === "custom") {
@@ -404,6 +579,10 @@ saveRecipeBtn.onclick = saveCurrentRecipe;
 loadRecipeBtn.onclick = loadSelectedRecipe;
 deleteRecipeBtn.onclick = deleteSelectedRecipe;
 
+locale.onchange = () => {
+  applyLocale(resolveLocale(locale.value));
+};
+
 window.addEventListener("keydown", (evt) => {
   const isUndo = (evt.ctrlKey || evt.metaKey) && !evt.shiftKey && evt.key.toLowerCase() === "z";
   const isRedo = ((evt.ctrlKey || evt.metaKey) && evt.key.toLowerCase() === "y") ||
@@ -433,7 +612,7 @@ gradStartColor.value = rgbToHex(initialEdited);
 gradMidColor.value = "#14b8a6";
 gradEndColor.value = "#6366f1";
 recipes = loadRecipes();
-renderRecipeOptions();
-refreshStatus();
+const storedLocale = resolveLocale(localStorage.getItem(localeStorageKey));
+applyLocale(storedLocale);
 lastState = captureState();
 updateHistoryButtons();
