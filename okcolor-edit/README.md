@@ -30,5 +30,5 @@ Load plugin in Figma (Development):
 ## Current limits
 
 - UI edits all currently selected layers that contain SOLID fills
-- Gradient editing logic is in core but not exposed with a full visual editor yet
+- Gradient preview now supports editable middle stop position, custom stop colors, and palette presets
 - Curve is implemented in core and prepared for UI binding
