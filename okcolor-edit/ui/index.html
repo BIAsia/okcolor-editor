@@ -38,7 +38,14 @@
     </div>
 
     <div class="panel">
-      <label>Curve midpoint (L channel)</label>
+      <label>Curve preset (L channel)</label>
+      <select id="curvePreset">
+        <option value="custom">custom midpoint</option>
+        <option value="contrast">contrast</option>
+        <option value="filmic">filmic</option>
+        <option value="pastel-recover">pastel recover</option>
+      </select>
+      <label>Curve midpoint (custom only)</label>
       <input id="curveMid" type="range" min="0" max="1" step="0.01" value="0.5" />
       <div class="small mono" id="curveHint">curve: (0,0) -> (0.5,0.5) -> (1,1)</div>
     </div>
