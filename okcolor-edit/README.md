@@ -34,4 +34,4 @@ Load plugin in Figma (Development):
 
 - UI edits all currently selected layers that expose editable fills
 - Gradient preview now supports editable middle stop position, custom stop colors, and palette presets
-- Curve controls currently target the L channel (single curve)
+- Curve controls support L/a/b channels (L includes preset packs; a/b use custom midpoint curves)

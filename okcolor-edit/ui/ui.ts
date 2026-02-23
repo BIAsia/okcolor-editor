@@ -29,6 +29,8 @@ const maskHint = byId<HTMLDivElement>("maskHint");
 const locale = byId<HTMLSelectElement>("locale");
 const curvePreset = byId<HTMLSelectElement>("curvePreset");
 const curveMid = byId<HTMLInputElement>("curveMid");
+const curveMidA = byId<HTMLInputElement>("curveMidA");
+const curveMidB = byId<HTMLInputElement>("curveMidB");
 const curveHint = byId<HTMLDivElement>("curveHint");
 const gradPalette = byId<HTMLSelectElement>("gradPalette");
 const gradStartColor = byId<HTMLInputElement>("gradStartColor");
@@ -63,6 +65,8 @@ type UiState = {
   maskCMax: string;
   curvePreset: CurvePresetId;
   curveMid: string;
+  curveMidA: string;
+  curveMidB: string;
   gradPalette: string;
   gradStartColor: string;
   gradMidPos: string;
@@ -115,6 +119,8 @@ type I18nKeys =
   | "curveFilmic"
   | "curvePastel"
   | "curveMidLabel"
+  | "curveMidALabel"
+  | "curveMidBLabel"
   | "gradientPaletteLabel"
   | "paletteCustom"
   | "paletteSunrise"
@@ -164,7 +170,9 @@ const I18N: Record<LocaleId, Record<I18nKeys, string>> = {
     curveContrast: "contrast",
     curveFilmic: "filmic",
     curvePastel: "pastel recover",
-    curveMidLabel: "Curve midpoint (custom only)",
+    curveMidLabel: "Curve midpoint (L, custom only)",
+    curveMidALabel: "Curve midpoint (a, custom)",
+    curveMidBLabel: "Curve midpoint (b, custom)",
     gradientPaletteLabel: "Gradient palette",
     paletteCustom: "custom",
     paletteSunrise: "sunrise",
@@ -213,7 +221,9 @@ const I18N: Record<LocaleId, Record<I18nKeys, string>> = {
     curveContrast: "对比增强",
     curveFilmic: "电影感",
     curvePastel: "粉彩恢复",
-    curveMidLabel: "曲线中点（仅自定义）",
+    curveMidLabel: "曲线中点（L，仅自定义）",
+    curveMidALabel: "曲线中点（a，自定义）",
+    curveMidBLabel: "曲线中点（b，自定义）",
     gradientPaletteLabel: "渐变色板",
     paletteCustom: "自定义",
     paletteSunrise: "日出",
@@ -262,6 +272,8 @@ function captureState(): UiState {
     maskCMax: maskCMax.value,
     curvePreset: curvePreset.value as CurvePresetId,
     curveMid: curveMid.value,
+    curveMidA: curveMidA.value,
+    curveMidB: curveMidB.value,
     gradPalette: gradPalette.value,
     gradStartColor: gradStartColor.value,
     gradMidPos: gradMidPos.value,
@@ -319,6 +331,8 @@ function setControls(state: UiState): void {
   maskCMax.value = state.maskCMax;
   curvePreset.value = state.curvePreset;
   curveMid.value = state.curveMid;
+  curveMidA.value = state.curveMidA;
+  curveMidB.value = state.curveMidB;
   gradPalette.value = state.gradPalette;
   gradStartColor.value = state.gradStartColor;
   gradMidPos.value = state.gradMidPos;
@@ -332,13 +346,28 @@ function updateHistoryButtons(): void {
   redoBtn.disabled = redoStack.length === 0;
 }
 
+function normalizeRecipeState(state: Partial<UiState> | undefined): UiState {
+  const fallback = captureState();
+  return {
+    ...fallback,
+    ...state,
+    curveMidA: typeof state?.curveMidA === "string" ? state.curveMidA : fallback.curveMidA,
+    curveMidB: typeof state?.curveMidB === "string" ? state.curveMidB : fallback.curveMidB
+  };
+}
+
 function loadRecipes(): SavedRecipe[] {
   try {
     const raw = localStorage.getItem(recipeStorageKey);
     if (!raw) return [];
     const parsed = JSON.parse(raw) as SavedRecipe[];
     if (!Array.isArray(parsed)) return [];
-    return parsed.filter((recipe) => Boolean(recipe?.name) && Boolean(recipe?.state));
+    return parsed
+      .filter((recipe) => Boolean(recipe?.name) && Boolean(recipe?.state))
+      .map((recipe) => ({
+        ...recipe,
+        state: normalizeRecipeState(recipe.state)
+      }));
   } catch {
     return [];
   }
@@ -467,6 +496,14 @@ function getLumaCurve(): CurvePoint[] {
   return getCurvePreset(preset);
 }
 
+function getAxisCurve(mid: number): CurvePoint[] {
+  return [
+    { x: 0, y: 0 },
+    { x: 0.5, y: mid },
+    { x: 1, y: 1 }
+  ];
+}
+
 function curveLabel(points: CurvePoint[]): string {
   return points.map((point) => `(${point.x.toFixed(2)},${point.y.toFixed(2)})`).join(" -> ");
 }
@@ -505,11 +542,15 @@ function computeEditedColor(): { rgb: RGB; clipped: boolean; maskWeight: number 
   };
 
   const labAfterLch = oklchToOklab(adjustedLch);
-  const curve = getLumaCurve();
+  const curveL = getLumaCurve();
+  const curveA = getAxisCurve(Number(curveMidA.value));
+  const curveB = getAxisCurve(Number(curveMidB.value));
+  const normA = (labAfterLch.a + 0.4) / 0.8;
+  const normB = (labAfterLch.b + 0.4) / 0.8;
   const labAfterCurve = {
-    l: applyCurve(labAfterLch.l, curve),
-    a: labAfterLch.a,
-    b: labAfterLch.b
+    l: applyCurve(labAfterLch.l, curveL),
+    a: applyCurve(normA, curveA) * 0.8 - 0.4,
+    b: applyCurve(normB, curveB) * 0.8 - 0.4
   };
 
   const rawRgb = oklabToRgbUnclamped(labAfterCurve);
@@ -550,8 +591,10 @@ function refreshStatus(): void {
     gamutStatus.className = "small";
   }
 
-  const curvePoints = getLumaCurve();
-  curveHint.textContent = `${t("curveHintPrefix")}: ${curveLabel(curvePoints)}`;
+  const curvePointsL = getLumaCurve();
+  const curvePointsA = getAxisCurve(Number(curveMidA.value));
+  const curvePointsB = getAxisCurve(Number(curveMidB.value));
+  curveHint.textContent = `${t("curveHintPrefix")} L: ${curveLabel(curvePointsL)} | a: ${curveLabel(curvePointsA)} | b: ${curveLabel(curvePointsB)}`;
   curveMid.disabled = (curvePreset.value as CurvePresetId) !== "custom";
 
   maskHint.textContent = `${t("maskHintPrefix")}: ${edited.maskWeight.toFixed(2)}`;
@@ -595,7 +638,7 @@ function redo(): void {
   applyHistoryState(next);
 }
 
-[l, a, b, c, h, maskFeather, maskLMin, maskLMax, maskCMin, maskCMax, curvePreset, curveMid, gradPalette, gradStartColor, gradMidPos, gradMidColor, gradEndColor, gamutPolicy].forEach((node) => {
+[l, a, b, c, h, maskFeather, maskLMin, maskLMax, maskCMin, maskCMax, curvePreset, curveMid, curveMidA, curveMidB, gradPalette, gradStartColor, gradMidPos, gradMidColor, gradEndColor, gamutPolicy].forEach((node) => {
   node.addEventListener("input", () => {
     if (applyingHistory) return;
     const before = lastState;
