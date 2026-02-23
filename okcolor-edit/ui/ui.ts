@@ -6,8 +6,11 @@ import {
   oklabToRgb,
   rgbToOklab,
   enforceGamut,
+  getCurvePreset,
   type RGB,
-  type GamutPolicy
+  type GamutPolicy,
+  type CurvePoint,
+  type CurvePresetId
 } from "../src/color";
 
 const byId = <T extends HTMLElement>(id: string): T => document.getElementById(id) as T;
@@ -16,6 +19,7 @@ const a = byId<HTMLInputElement>("a");
 const b = byId<HTMLInputElement>("b");
 const c = byId<HTMLInputElement>("c");
 const h = byId<HTMLInputElement>("h");
+const curvePreset = byId<HTMLSelectElement>("curvePreset");
 const curveMid = byId<HTMLInputElement>("curveMid");
 const curveHint = byId<HTMLDivElement>("curveHint");
 const gradHue = byId<HTMLInputElement>("gradHue");
@@ -34,6 +38,7 @@ type UiState = {
   b: string;
   c: string;
   h: string;
+  curvePreset: CurvePresetId;
   curveMid: string;
   gradHue: string;
   gamutPolicy: GamutPolicy;
@@ -52,6 +57,7 @@ function captureState(): UiState {
     b: b.value,
     c: c.value,
     h: h.value,
+    curvePreset: curvePreset.value as CurvePresetId,
     curveMid: curveMid.value,
     gradHue: gradHue.value,
     gamutPolicy: gamutPolicy.value as GamutPolicy
@@ -68,6 +74,7 @@ function setControls(state: UiState): void {
   b.value = state.b;
   c.value = state.c;
   h.value = state.h;
+  curvePreset.value = state.curvePreset;
   curveMid.value = state.curveMid;
   gradHue.value = state.gradHue;
   gamutPolicy.value = state.gamutPolicy;
@@ -88,18 +95,31 @@ window.onmessage = (evt: MessageEvent) => {
   }
 };
 
+function getLumaCurve(): CurvePoint[] {
+  const preset = curvePreset.value as CurvePresetId;
+  if (preset === "custom") {
+    const mid = Number(curveMid.value);
+    return [
+      { x: 0, y: 0 },
+      { x: 0.5, y: mid },
+      { x: 1, y: 1 }
+    ];
+  }
+
+  return getCurvePreset(preset);
+}
+
+function curveLabel(points: CurvePoint[]): string {
+  return points.map((point) => `(${point.x.toFixed(2)},${point.y.toFixed(2)})`).join(" -> ");
+}
+
 function computeEditedColor(): { rgb: RGB; clipped: boolean } {
   const deltaLab = { l: Number(l.value), a: Number(a.value), b: Number(b.value) };
   const afterLab = adjustInOklab(selectedColor, deltaLab);
   const afterLch = adjustInOklch(afterLab, { c: Number(c.value), h: Number(h.value) });
 
-  const curve = Number(curveMid.value);
   const afterCurve = applyLabCurves(afterLch, {
-    l: [
-      { x: 0, y: 0 },
-      { x: 0.5, y: curve },
-      { x: 1, y: 1 }
-    ]
+    l: getLumaCurve()
   });
 
   const safe = oklabToRgb(rgbToOklab(afterCurve));
@@ -133,7 +153,9 @@ function refreshStatus(): void {
     gamutStatus.className = "small";
   }
 
-  curveHint.textContent = `curve: (0,0) -> (0.5,${Number(curveMid.value).toFixed(2)}) -> (1,1)`;
+  const curvePoints = getLumaCurve();
+  curveHint.textContent = `curve: ${curveLabel(curvePoints)}`;
+  curveMid.disabled = (curvePreset.value as CurvePresetId) !== "custom";
   renderGradientPreview();
 }
 
@@ -167,7 +189,7 @@ function redo(): void {
   applyHistoryState(next);
 }
 
-[l, a, b, c, h, curveMid, gradHue, gamutPolicy].forEach((node) => {
+[l, a, b, c, h, curvePreset, curveMid, gradHue, gamutPolicy].forEach((node) => {
   node.addEventListener("input", () => {
     if (applyingHistory) return;
     const before = lastState;
