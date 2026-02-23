@@ -51,8 +51,12 @@
     </div>
 
     <div class="panel">
+      <label>Gradient middle stop position</label>
+      <input id="gradMidPos" type="range" min="0.1" max="0.9" step="0.01" value="0.5" />
+      <label>Gradient middle hue shift</label>
+      <input id="gradMidHue" type="range" min="-180" max="180" step="1" value="20" />
       <label>Gradient end hue shift</label>
-      <input id="gradHue" type="range" min="-180" max="180" step="1" value="45" />
+      <input id="gradEndHue" type="range" min="-180" max="180" step="1" value="60" />
       <canvas id="gradPreview" width="320" height="28"></canvas>
     </div>
 
