@@ -207,6 +207,28 @@ export function enforceGamut(rgb: RGB, policy: GamutPolicy): { rgb: RGB; clipped
   };
 }
 
+export type RegionMask = {
+  lMin: number;
+  lMax: number;
+  cMin: number;
+  cMax: number;
+  feather: number;
+};
+
+function edgeWeight(value: number, min: number, max: number, feather: number): number {
+  if (value < min || value > max) return 0;
+  if (feather <= 1e-6) return 1;
+  const fromMin = (value - min) / feather;
+  const toMax = (max - value) / feather;
+  return clamp01(Math.min(fromMin, toMax, 1));
+}
+
+export function computeRegionMaskWeight(lch: Oklch, mask: RegionMask): number {
+  const lWeight = edgeWeight(lch.l, clamp01(mask.lMin), clamp01(mask.lMax), Math.max(0, mask.feather));
+  const cWeight = edgeWeight(lch.c, Math.max(0, mask.cMin), Math.max(0, mask.cMax), Math.max(0, mask.feather));
+  return lWeight * cWeight;
+}
+
 export function gradientRamp(start: RGB, end: RGB, steps: number): RGB[] {
   const a = oklabToOklch(rgbToOklab(start));
   const b = oklabToOklch(rgbToOklab(end));
