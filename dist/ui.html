@@ -1,0 +1,67 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>okcolor edit</title>
+  <style>
+    :root { --bg:#f7f5ef; --panel:#fffdf8; --text:#1f1e1a; --accent:#1f7a6d; --warn:#b45309; }
+    body { margin:0; font:13px/1.4 ui-sans-serif, system-ui; background:var(--bg); color:var(--text); }
+    .wrap { padding:12px; }
+    .panel { background:var(--panel); border:1px solid #ddd5c8; border-radius:10px; padding:10px; margin-bottom:10px; }
+    label { display:block; margin:6px 0 4px; font-weight:600; }
+    input[type="range"] { width:100%; }
+    button { border:0; background:var(--accent); color:#fff; border-radius:8px; padding:8px 10px; cursor:pointer; }
+    .row { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+    .small { font-size:12px; opacity:0.75; }
+    .warn { color: var(--warn); font-weight: 600; }
+    canvas { width: 100%; height: 28px; border-radius: 6px; border: 1px solid #ddd5c8; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; }
+    select { width: 100%; padding: 6px; border-radius: 6px; border: 1px solid #ddd5c8; background: #fff; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="panel">
+      <div><strong>okcolor edit</strong></div>
+      <div class="small">Oklab/Oklch conversion, gradient, curve, gamut policy</div>
+    </div>
+
+    <div class="panel">
+      <label>L shift</label><input id="l" type="range" min="-0.2" max="0.2" step="0.005" value="0" />
+      <label>a shift</label><input id="a" type="range" min="-0.2" max="0.2" step="0.005" value="0" />
+      <label>b shift</label><input id="b" type="range" min="-0.2" max="0.2" step="0.005" value="0" />
+      <div class="row">
+        <div><label>C shift</label><input id="c" type="range" min="-0.2" max="0.2" step="0.005" value="0" /></div>
+        <div><label>H shift</label><input id="h" type="range" min="-180" max="180" step="1" value="0" /></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <label>Curve midpoint (L channel)</label>
+      <input id="curveMid" type="range" min="0" max="1" step="0.01" value="0.5" />
+      <div class="small mono" id="curveHint">curve: (0,0) -> (0.5,0.5) -> (1,1)</div>
+    </div>
+
+    <div class="panel">
+      <label>Gradient end hue shift</label>
+      <input id="gradHue" type="range" min="-180" max="180" step="1" value="45" />
+      <canvas id="gradPreview" width="320" height="28"></canvas>
+    </div>
+
+    <div class="panel">
+      <label>Gamut policy</label>
+      <select id="gamutPolicy">
+        <option value="clip">clip</option>
+        <option value="compress">compress</option>
+        <option value="warn">warn + clip</option>
+      </select>
+      <div id="gamutStatus" class="small"></div>
+      <button id="apply">Apply to selection</button>
+    </div>
+
+    <div class="panel small">Tip: select a layer with SOLID fill first.</div>
+  </div>
+
+  <script type="module" src="./ui.js"></script>
+</body>
+</html>
