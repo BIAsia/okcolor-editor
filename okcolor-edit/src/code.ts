@@ -123,6 +123,15 @@ function sanitizeGradientStops(stops: GradientStopMessage[]): ColorStop[] {
   }));
 }
 
+function getGradientTransformForNode(fills: ReadonlyArray<Paint>): Transform {
+  const existingGradient = fills.find((paint) => paint.type === "GRADIENT_LINEAR") as GradientPaint | undefined;
+  if (existingGradient?.gradientTransform) {
+    return existingGradient.gradientTransform;
+  }
+
+  return [[1, 0, 0], [0, 1, 0]];
+}
+
 figma.ui.onmessage = (msg) => {
   if (msg.type === "request-selection-color") {
     figma.ui.postMessage({ type: "selection-color", color: getSolidPaintColor() });
@@ -180,7 +189,7 @@ figma.ui.onmessage = (msg) => {
         visible: true,
         opacity: 1,
         blendMode: "NORMAL",
-        gradientTransform: [[1, 0, 0], [0, 1, 0]],
+        gradientTransform: getGradientTransformForNode(fills),
         gradientStops
       };
 
