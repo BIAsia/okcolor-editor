@@ -23,9 +23,11 @@ npm run preflight:collab
 npm run test
 npm run build
 npm run smoke:plugin
+npm run release:check
 ```
 
 Workflow source of truth: `docs/github-collab.md`.
+Release gate and RC checklist: `docs/release-readiness-checklist.md`.
 
 Load plugin in Figma (Development):
 
