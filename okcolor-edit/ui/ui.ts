@@ -45,6 +45,8 @@ const gradStop4Pos = byId<HTMLInputElement>("gradStop4Pos");
 const gradStop4Color = byId<HTMLInputElement>("gradStop4Color");
 const gradEndColor = byId<HTMLInputElement>("gradEndColor");
 const gradPreview = byId<HTMLCanvasElement>("gradPreview");
+const labHistogram = byId<HTMLCanvasElement>("labHistogram");
+const labWaveform = byId<HTMLCanvasElement>("labWaveform");
 const recipeList = byId<HTMLSelectElement>("recipeList");
 const recipeName = byId<HTMLInputElement>("recipeName");
 const saveRecipeBtn = byId<HTMLButtonElement>("saveRecipe");
@@ -162,6 +164,8 @@ type I18nKeys =
   | "recipeNameLabel"
   | "recipeNamePlaceholder"
   | "saveCurrent"
+  | "histogramLabel"
+  | "waveformLabel"
   | "gamutPolicyLabel"
   | "gamutClip"
   | "gamutCompress"
@@ -218,6 +222,8 @@ const I18N: Record<LocaleId, Record<I18nKeys, string>> = {
     recipeNameLabel: "Recipe name",
     recipeNamePlaceholder: "e.g. soft filmic teal",
     saveCurrent: "Save current settings",
+    histogramLabel: "Oklab histogram (L/a/b)",
+    waveformLabel: "Oklab waveform (L/a/b)",
     gamutPolicyLabel: "Gamut policy",
     gamutClip: "clip",
     gamutCompress: "compress",
@@ -273,6 +279,8 @@ const I18N: Record<LocaleId, Record<I18nKeys, string>> = {
     recipeNameLabel: "配方名称",
     recipeNamePlaceholder: "例如：柔和电影感青色",
     saveCurrent: "保存当前设置",
+    histogramLabel: "Oklab 直方图（L/a/b）",
+    waveformLabel: "Oklab 波形图（L/a/b）",
     gamutPolicyLabel: "色域策略",
     gamutClip: "裁剪",
     gamutCompress: "压缩",
@@ -652,6 +660,85 @@ function renderGradientPreview(): void {
   }
 }
 
+function getRampOklabSamples(sampleCount = 64): ReturnType<typeof rgbToOklab>[] {
+  return gradientRampFromStops(getGradientStops(), sampleCount).map((rgb) => rgbToOklab(rgb));
+}
+
+function renderLabHistogram(): void {
+  const ctx = labHistogram.getContext("2d");
+  if (!ctx) return;
+
+  const width = labHistogram.width;
+  const height = labHistogram.height;
+  const bins = 24;
+  const channels = {
+    l: new Array<number>(bins).fill(0),
+    a: new Array<number>(bins).fill(0),
+    b: new Array<number>(bins).fill(0)
+  };
+
+  for (const sample of getRampOklabSamples()) {
+    channels.l[Math.min(bins - 1, Math.max(0, Math.floor(sample.l * bins)))] += 1;
+    channels.a[Math.min(bins - 1, Math.max(0, Math.floor(((sample.a + 0.4) / 0.8) * bins)))] += 1;
+    channels.b[Math.min(bins - 1, Math.max(0, Math.floor(((sample.b + 0.4) / 0.8) * bins)))] += 1;
+  }
+
+  const maxBin = Math.max(1, ...channels.l, ...channels.a, ...channels.b);
+  ctx.clearRect(0, 0, width, height);
+  ctx.fillStyle = "#fff";
+  ctx.fillRect(0, 0, width, height);
+
+  const barWidth = width / bins;
+  const drawChannel = (values: number[], color: string): void => {
+    ctx.fillStyle = color;
+    for (let i = 0; i < bins; i++) {
+      const normalized = values[i] / maxBin;
+      const barHeight = normalized * (height - 4);
+      ctx.globalAlpha = 0.5;
+      ctx.fillRect(i * barWidth + 1, height - barHeight - 2, Math.max(1, barWidth - 2), barHeight);
+    }
+    ctx.globalAlpha = 1;
+  };
+
+  drawChannel(channels.l, "#2563eb");
+  drawChannel(channels.a, "#16a34a");
+  drawChannel(channels.b, "#dc2626");
+}
+
+function renderLabWaveform(): void {
+  const ctx = labWaveform.getContext("2d");
+  if (!ctx) return;
+
+  const width = labWaveform.width;
+  const height = labWaveform.height;
+  const samples = getRampOklabSamples();
+  const lastIndex = Math.max(1, samples.length - 1);
+
+  ctx.clearRect(0, 0, width, height);
+  ctx.fillStyle = "#fff";
+  ctx.fillRect(0, 0, width, height);
+
+  const drawLine = (mapY: (sample: ReturnType<typeof rgbToOklab>) => number, color: string): void => {
+    ctx.beginPath();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.5;
+    for (let i = 0; i < samples.length; i++) {
+      const x = (i / lastIndex) * width;
+      const y = mapY(samples[i]);
+      if (i === 0) {
+        ctx.moveTo(x, y);
+      } else {
+        ctx.lineTo(x, y);
+      }
+    }
+    ctx.stroke();
+  };
+
+  drawLine((sample) => height - sample.l * (height - 1), "#2563eb");
+  drawLine((sample) => height - ((sample.a + 0.4) / 0.8) * (height - 1), "#16a34a");
+  drawLine((sample) => height - ((sample.b + 0.4) / 0.8) * (height - 1), "#dc2626");
+}
+
 function refreshExtraStopControls(): void {
   gradStop2Pos.disabled = !gradStop2Enabled.checked;
   gradStop2Color.disabled = !gradStop2Enabled.checked;
@@ -683,6 +770,8 @@ function refreshStatus(): void {
   }
   refreshExtraStopControls();
   renderGradientPreview();
+  renderLabHistogram();
+  renderLabWaveform();
 }
 
 function applyHistoryState(state: UiState): void {
