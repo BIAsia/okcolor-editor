@@ -8,11 +8,15 @@ Run:
 
 ```bash
 npm run release:check
+npm run release:evidence
 ```
 
 Expected output ends with:
 
 - `[release] readiness gate passed...`
+- `[release:evidence] automated gate passed...`
+
+`release:evidence` writes machine-readable evidence to `docs/release-evidence/latest.json` for RC handoff.
 
 This gate enforces:
 

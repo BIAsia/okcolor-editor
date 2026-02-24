@@ -9,7 +9,8 @@
     "test:watch": "vitest",
     "smoke:plugin": "node scripts/smoke-plugin.mjs",
     "preflight:collab": "node scripts/preflight-collab.mjs",
-    "release:check": "node scripts/release-readiness.mjs"
+    "release:check": "node scripts/release-readiness.mjs",
+    "release:evidence": "node scripts/release-evidence.mjs"
   },
   "devDependencies": {
     "esbuild": "^0.25.0",

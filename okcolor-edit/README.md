@@ -24,6 +24,7 @@ npm run test
 npm run build
 npm run smoke:plugin
 npm run release:check
+npm run release:evidence
 ```
 
 Workflow source of truth: `docs/github-collab.md`.
