@@ -11,6 +11,7 @@
     label { display:block; margin:6px 0 4px; font-weight:600; }
     input[type="range"] { width:100%; }
     button { border:0; background:var(--accent); color:#fff; border-radius:8px; padding:8px 10px; cursor:pointer; }
+    button:disabled { opacity: 0.45; cursor: not-allowed; }
     .row { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
     .small { font-size:12px; opacity:0.75; }
     .warn { color: var(--warn); font-weight: 600; }
@@ -43,11 +44,8 @@
     </div>
 
     <div class="panel">
-      <label>Gradient stop count</label>
-      <input id="gradStops" type="range" min="2" max="8" step="1" value="3" />
-      <label>Gradient hue shift per stop</label>
-      <input id="gradHue" type="range" min="-180" max="180" step="1" value="30" />
-      <div class="small mono" id="gradHint">3 stops, +30° hue/stop</div>
+      <label>Gradient end hue shift</label>
+      <input id="gradHue" type="range" min="-180" max="180" step="1" value="45" />
       <canvas id="gradPreview" width="320" height="28"></canvas>
     </div>
 
@@ -59,7 +57,11 @@
         <option value="warn">warn + clip</option>
       </select>
       <div id="gamutStatus" class="small"></div>
-      <button id="apply">Apply to selection</button>
+      <div class="row">
+        <button id="undo" type="button">Undo</button>
+        <button id="redo" type="button">Redo</button>
+      </div>
+      <button id="apply" type="button">Apply to selection</button>
     </div>
 
     <div class="panel small">Tip: select a layer with SOLID fill first.</div>
