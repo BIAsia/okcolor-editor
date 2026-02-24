@@ -26,6 +26,7 @@ const maskLMax = byId<HTMLInputElement>("maskLMax");
 const maskCMin = byId<HTMLInputElement>("maskCMin");
 const maskCMax = byId<HTMLInputElement>("maskCMax");
 const maskHint = byId<HTMLDivElement>("maskHint");
+const maskScope = byId<HTMLCanvasElement>("maskScope");
 const locale = byId<HTMLSelectElement>("locale");
 const curvePack = byId<HTMLSelectElement>("curvePack");
 const curvePreset = byId<HTMLSelectElement>("curvePreset");
@@ -135,6 +136,7 @@ type I18nKeys =
   | "maskLRangeLabel"
   | "maskCRangeLabel"
   | "maskHintPrefix"
+  | "maskScopeLabel"
   | "curvePackLabel"
   | "curvePackCustom"
   | "curvePresetLabel"
@@ -193,6 +195,7 @@ const I18N: Record<LocaleId, Record<I18nKeys, string>> = {
     maskLRangeLabel: "L range min/max",
     maskCRangeLabel: "C range min/max",
     maskHintPrefix: "mask weight",
+    maskScopeLabel: "Mask scope over gradient",
     curvePackLabel: "Curve pack",
     curvePackCustom: "custom",
     curvePresetLabel: "Curve preset (L channel)",
@@ -250,6 +253,7 @@ const I18N: Record<LocaleId, Record<I18nKeys, string>> = {
     maskLRangeLabel: "L 范围 最小/最大",
     maskCRangeLabel: "C 范围 最小/最大",
     maskHintPrefix: "蒙版权重",
+    maskScopeLabel: "渐变上的蒙版覆盖",
     curvePackLabel: "曲线组合包",
     curvePackCustom: "自定义",
     curvePresetLabel: "曲线预设（L 通道）",
@@ -581,17 +585,8 @@ function curveLabel(points: CurvePoint[]): string {
 function computeEditedColor(): { rgb: RGB; clipped: boolean; maskWeight: number } {
   const baseLab = rgbToOklab(selectedColor);
   const baseLch = oklabToOklch(baseLab);
-  const lMin = Math.min(Number(maskLMin.value), Number(maskLMax.value));
-  const lMax = Math.max(Number(maskLMin.value), Number(maskLMax.value));
-  const cMin = Math.min(Number(maskCMin.value), Number(maskCMax.value));
-  const cMax = Math.max(Number(maskCMin.value), Number(maskCMax.value));
-  const maskWeight = computeRegionMaskWeight(baseLch, {
-    lMin,
-    lMax,
-    cMin,
-    cMax,
-    feather: Number(maskFeather.value)
-  });
+  const maskConfig = getMaskConfig();
+  const maskWeight = computeRegionMaskWeight(baseLch, maskConfig);
 
   const deltaLab = {
     l: Number(l.value) * maskWeight,
@@ -739,6 +734,42 @@ function renderLabWaveform(): void {
   drawLine((sample) => height - ((sample.b + 0.4) / 0.8) * (height - 1), "#dc2626");
 }
 
+function getMaskConfig(): { lMin: number; lMax: number; cMin: number; cMax: number; feather: number } {
+  return {
+    lMin: Math.min(Number(maskLMin.value), Number(maskLMax.value)),
+    lMax: Math.max(Number(maskLMin.value), Number(maskLMax.value)),
+    cMin: Math.min(Number(maskCMin.value), Number(maskCMax.value)),
+    cMax: Math.max(Number(maskCMin.value), Number(maskCMax.value)),
+    feather: Number(maskFeather.value)
+  };
+}
+
+function renderMaskScope(weights: number[]): void {
+  const ctx = maskScope.getContext("2d");
+  if (!ctx) return;
+
+  const width = maskScope.width;
+  const height = maskScope.height;
+  const count = Math.max(1, weights.length);
+  const step = width / count;
+
+  ctx.clearRect(0, 0, width, height);
+  ctx.fillStyle = "#fff";
+  ctx.fillRect(0, 0, width, height);
+
+  for (let i = 0; i < count; i++) {
+    const weight = Math.min(1, Math.max(0, weights[i] ?? 0));
+    const barHeight = weight * (height - 6);
+    const alpha = 0.2 + weight * 0.75;
+    ctx.fillStyle = `rgba(31, 122, 109, ${alpha.toFixed(3)})`;
+    ctx.fillRect(i * step, height - barHeight - 3, Math.max(1, Math.ceil(step)), barHeight);
+  }
+
+  ctx.strokeStyle = "#ddd5c8";
+  ctx.lineWidth = 1;
+  ctx.strokeRect(0.5, 0.5, width - 1, height - 1);
+}
+
 function refreshExtraStopControls(): void {
   gradStop2Pos.disabled = !gradStop2Enabled.checked;
   gradStop2Color.disabled = !gradStop2Enabled.checked;
@@ -763,7 +794,12 @@ function refreshStatus(): void {
   curveHint.textContent = `${t("curveHintPrefix")} L: ${curveLabel(curvePointsL)} | a: ${curveLabel(curvePointsA)} | b: ${curveLabel(curvePointsB)}`;
   curveMid.disabled = (curvePreset.value as CurvePresetId) !== "custom";
 
-  maskHint.textContent = `${t("maskHintPrefix")}: ${edited.maskWeight.toFixed(2)}`;
+  const maskConfig = getMaskConfig();
+  const maskWeights = getRampOklabSamples().map((sample) =>
+    computeRegionMaskWeight(oklabToOklch(sample), maskConfig)
+  );
+  const maskAverage = maskWeights.reduce((sum, weight) => sum + weight, 0) / Math.max(1, maskWeights.length);
+  maskHint.textContent = `${t("maskHintPrefix")}: ${edited.maskWeight.toFixed(2)} | avg ${maskAverage.toFixed(2)}`;
 
   if (gradPalette.value === "custom") {
     gradStartColor.value = rgbToHex(edited.rgb);
@@ -772,6 +808,7 @@ function refreshStatus(): void {
   renderGradientPreview();
   renderLabHistogram();
   renderLabWaveform();
+  renderMaskScope(maskWeights);
 }
 
 function applyHistoryState(state: UiState): void {
