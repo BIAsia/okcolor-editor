@@ -143,6 +143,18 @@ function getGradientTransformForNode(fills: ReadonlyArray<Paint>): Transform {
   return [[1, 0, 0], [0, 1, 0]];
 }
 
+function replaceOrPrependPaint(
+  fills: ReadonlyArray<Paint>,
+  nextPaint: Paint,
+  shouldReplace: (paint: Paint) => boolean
+): Paint[] {
+  const replaceIndex = fills.findIndex(shouldReplace);
+  if (replaceIndex >= 0) {
+    return fills.map((paint, index) => (index === replaceIndex ? nextPaint : paint));
+  }
+  return [nextPaint, ...fills];
+}
+
 figma.ui.onmessage = (msg) => {
   if (msg.type === "request-selection-color") {
     figma.ui.postMessage({ type: "selection-color", color: getSolidPaintColor() });
@@ -167,10 +179,11 @@ figma.ui.onmessage = (msg) => {
         color: applySolidAdjustment(baseColor, settings)
       };
 
-      const next =
-        fills.length === 0
-          ? [nextSolid]
-          : [nextSolid, ...fills.filter((paint) => paint.type !== "SOLID")];
+      const next = replaceOrPrependPaint(
+        fills,
+        nextSolid,
+        (paint) => paint.type === "SOLID"
+      );
 
       try {
         node.fills = next;
@@ -205,10 +218,11 @@ figma.ui.onmessage = (msg) => {
         gradientStops
       };
 
-      const next =
-        fills.length === 0
-          ? [nextGradient]
-          : [nextGradient, ...fills.filter((paint) => paint.type !== "SOLID" && !isGradientPaint(paint))];
+      const next = replaceOrPrependPaint(
+        fills,
+        nextGradient,
+        (paint) => isGradientPaint(paint) || paint.type === "SOLID"
+      );
 
       try {
         node.fills = next;
