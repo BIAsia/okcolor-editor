@@ -908,8 +908,24 @@ window.addEventListener("keydown", (evt) => {
 });
 
 applyBtn.onclick = () => {
-  const edited = computeEditedColor();
-  parent.postMessage({ pluginMessage: { type: "apply-solid-color", color: edited.rgb } }, "*");
+  parent.postMessage({
+    pluginMessage: {
+      type: "apply-solid-adjustment",
+      settings: {
+        l: Number(l.value),
+        a: Number(a.value),
+        b: Number(b.value),
+        c: Number(c.value),
+        h: Number(h.value),
+        curvePreset: curvePreset.value,
+        curveMid: Number(curveMid.value),
+        curveMidA: Number(curveMidA.value),
+        curveMidB: Number(curveMidB.value),
+        gamutPolicy: gamutPolicy.value,
+        mask: getMaskConfig()
+      }
+    }
+  }, "*");
 };
 
 applyGradientBtn.onclick = () => {
