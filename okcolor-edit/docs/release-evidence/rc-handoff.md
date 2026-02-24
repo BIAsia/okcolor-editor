@@ -1,9 +1,9 @@
 # RC Handoff
 
-- Generated: 2026-02-24T19:07:59.784Z
-- Evidence generated at: 2026-02-24T19:07:55.776Z
+- Generated: 2026-02-24T19:53:04.940Z
+- Evidence generated at: 2026-02-24T19:53:03.504Z
 - Branch: feat/okcolor-v0.3-pr
-- Commit: aafcdaed851df4d36c93ac909420e22784777a9a
+- Commit: 34051c5a2f7e96f8b85330456f94333aa3c33892
 - Automated gate: passed
 
 ## Automated checks
@@ -13,4 +13,4 @@
 - plugin smoke: pass
 
 ## Known limitations
-- manual Figma desktop pass + RC tag pending
+- Pending manual Figma desktop E2E verification before RC tag.
