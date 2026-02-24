@@ -13,6 +13,7 @@ import {
   type RegionMask,
   type RGB
 } from "./color";
+import { findGradientOrSolidReplaceIndex, isGradientPaintType, replaceAtOrPrepend } from "./paint-utils";
 
 figma.showUI(__html__, { width: 360, height: 520 });
 
@@ -124,10 +125,7 @@ function sanitizeGradientStops(stops: GradientStopMessage[]): ColorStop[] {
 }
 
 function isGradientPaint(paint: Paint): paint is GradientPaint {
-  return paint.type === "GRADIENT_LINEAR" ||
-    paint.type === "GRADIENT_RADIAL" ||
-    paint.type === "GRADIENT_ANGULAR" ||
-    paint.type === "GRADIENT_DIAMOND";
+  return isGradientPaintType(paint.type);
 }
 
 function getExistingGradientPaint(fills: ReadonlyArray<Paint>): GradientPaint | undefined {
@@ -146,13 +144,9 @@ function getGradientTransformForNode(fills: ReadonlyArray<Paint>): Transform {
 function replaceOrPrependPaint(
   fills: ReadonlyArray<Paint>,
   nextPaint: Paint,
-  shouldReplace: (paint: Paint) => boolean
+  replaceIndex: number
 ): Paint[] {
-  const replaceIndex = fills.findIndex(shouldReplace);
-  if (replaceIndex >= 0) {
-    return fills.map((paint, index) => (index === replaceIndex ? nextPaint : paint));
-  }
-  return [nextPaint, ...fills];
+  return replaceAtOrPrepend(fills, replaceIndex, nextPaint);
 }
 
 figma.ui.onmessage = (msg) => {
@@ -182,7 +176,7 @@ figma.ui.onmessage = (msg) => {
       const next = replaceOrPrependPaint(
         fills,
         nextSolid,
-        (paint) => paint.type === "SOLID"
+        fills.findIndex((paint) => paint.type === "SOLID")
       );
 
       try {
@@ -221,7 +215,7 @@ figma.ui.onmessage = (msg) => {
       const next = replaceOrPrependPaint(
         fills,
         nextGradient,
-        (paint) => isGradientPaint(paint) || paint.type === "SOLID"
+        findGradientOrSolidReplaceIndex(fills)
       );
 
       try {
