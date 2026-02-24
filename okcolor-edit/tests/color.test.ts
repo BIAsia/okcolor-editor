@@ -90,6 +90,22 @@ describe("gradient and gamut", () => {
     expect(ramp[ramp.length - 1].b).toBeCloseTo(1, 2);
   });
 
+  it("anchors gradient ends when stops do not include 0 and 1", () => {
+    const ramp = gradientRampFromStops([
+      { position: 0.25, color: { r: 1, g: 0, b: 0 } },
+      { position: 0.75, color: { r: 0, g: 0, b: 1 } }
+    ], 9);
+
+    expect(ramp[0].r).toBeCloseTo(1, 2);
+    expect(ramp[0].g).toBeCloseTo(0, 2);
+    expect(ramp[0].b).toBeCloseTo(0, 2);
+
+    const last = ramp[ramp.length - 1];
+    expect(last.r).toBeCloseTo(0, 2);
+    expect(last.g).toBeCloseTo(0, 2);
+    expect(last.b).toBeCloseTo(1, 2);
+  });
+
   it("detects out-of-gamut before enforcing policy", () => {
     const raw = oklabToRgbUnclamped({ l: 0.8, a: 0.45, b: -0.2 });
     expect(raw.r > 1 || raw.r < 0 || raw.g > 1 || raw.g < 0 || raw.b > 1 || raw.b < 0).toBeTruthy();

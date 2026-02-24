@@ -260,7 +260,15 @@ export function gradientRampFromStops(stops: GradientStop[], steps: number): RGB
     return Array.from({ length: count }, () => ({ ...fallback }));
   }
 
-  const lchStops = normalizedStops.map((stop) => ({
+  const anchoredStops = [...normalizedStops];
+  if (anchoredStops[0].position > 0) {
+    anchoredStops.unshift({ position: 0, color: anchoredStops[0].color });
+  }
+  if (anchoredStops[anchoredStops.length - 1].position < 1) {
+    anchoredStops.push({ position: 1, color: anchoredStops[anchoredStops.length - 1].color });
+  }
+
+  const lchStops = anchoredStops.map((stop) => ({
     position: stop.position,
     lch: oklabToOklch(rgbToOklab(stop.color))
   }));
@@ -270,8 +278,13 @@ export function gradientRampFromStops(stops: GradientStop[], steps: number): RGB
     const t = i / (count - 1);
 
     let rightIndex = lchStops.findIndex((stop) => t <= stop.position);
-    if (rightIndex <= 0) rightIndex = 1;
-    if (rightIndex === -1) rightIndex = lchStops.length - 1;
+    if (rightIndex === -1) {
+      rightIndex = lchStops.length - 1;
+    }
+    if (rightIndex === 0) {
+      out.push(oklabToRgb(oklchToOklab(lchStops[0].lch)));
+      continue;
+    }
 
     const left = lchStops[rightIndex - 1];
     const right = lchStops[rightIndex];
