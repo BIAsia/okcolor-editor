@@ -5,9 +5,9 @@
   "type": "module",
   "scripts": {
     "build": "node build.mjs",
-    "build:watch": "node build.mjs --watch",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "preflight:collab": "node scripts/preflight-collab.mjs"
   },
   "devDependencies": {
     "esbuild": "^0.25.0",

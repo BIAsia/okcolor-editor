@@ -20,12 +20,27 @@ npm run test
 npm run build
 ```
 
-Load plugin in Figma (Development):
+## Stable local testing workflow (Figma plugin)
 
-1. Open Figma desktop app.
-2. Plugins -> Development -> Import plugin from manifest.
-3. Select this file: `manifest.json`.
-4. Run `okcolor edit`.
+1. Open Figma desktop app and import `manifest.json` once:
+   - Plugins -> Development -> Import plugin from manifest.
+2. Keep a watch build running while you test:
+
+```bash
+npm run build:watch
+```
+
+3. Turn on hot reload for faster iterations:
+   - Plugins -> Development -> Hot reload plugin.
+4. Debug via console when needed:
+   - Plugins -> Development -> Open Console.
+5. For deep debugger use, temporarily enable:
+   - Plugins -> Development -> Use Developer VM.
+   - Final verification should still be done with Developer VM off.
+
+Compatibility note: plugin backend output is compiled to `es2017` to avoid sandbox syntax parse errors (for example, `Unexpected token ...`).
+
+Detailed guide: `docs/local-testing.md`.
 
 ## Current limits
 
