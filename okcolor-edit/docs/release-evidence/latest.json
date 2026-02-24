@@ -1,0 +1,28 @@
+{
+  "generatedAt": "2026-02-24T18:23:49.745Z",
+  "branch": "feat/okcolor-v0.3-pr",
+  "commit": "c8c2f5aaa60bbaf9d5fe4f13f580809fd5b11902",
+  "releaseGate": "passed",
+  "checks": [
+    {
+      "name": "preflight",
+      "command": "npm run preflight:collab",
+      "status": "pass"
+    },
+    {
+      "name": "unit tests",
+      "command": "npm run test",
+      "status": "pass"
+    },
+    {
+      "name": "build",
+      "command": "npm run build",
+      "status": "pass"
+    },
+    {
+      "name": "plugin smoke",
+      "command": "npm run smoke:plugin",
+      "status": "pass"
+    }
+  ]
+}

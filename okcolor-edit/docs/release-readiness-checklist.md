@@ -9,12 +9,14 @@ Run:
 ```bash
 npm run release:check
 npm run release:evidence
+npm run release:handoff -- "<known limitations>"
 ```
 
 Expected output ends with:
 
 - `[release] readiness gate passed...`
 - `[release:evidence] automated gate passed...`
+- `[release:handoff] wrote docs/release-evidence/rc-handoff.md`
 
 `release:evidence` writes machine-readable evidence to `docs/release-evidence/latest.json` for RC handoff.
 
