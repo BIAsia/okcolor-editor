@@ -19,9 +19,12 @@ A Figma plugin prototype that brings illustration-style color editing to Oklab/O
 
 ```bash
 npm install
+npm run preflight:collab
 npm run test
 npm run build
 ```
+
+Workflow source of truth: `docs/github-collab.md`.
 
 Load plugin in Figma (Development):
 
