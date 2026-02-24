@@ -31,6 +31,8 @@ npm run sync:daily -- "Owner morning focus" "Mona execution plan" "first report"
 npm run sync:tasks -- "okcolor-edit: ship v0.3 diagnostics" "P1" "Doing"
 ```
 
+`sync:tasks` uses upsert semantics by normalized task title: it updates Status/Priority if a matching row exists, otherwise creates a new row.
+
 ## Todo rule (must-read before sync)
 - Canonical status is `Todo | Doing | Done | Dropped` (`Dropped` means no longer needed).
 - Canonical priority is `P0 | P1 | P2` (`High/Medium/Low` will be normalized to `P1/P2/P2`).
