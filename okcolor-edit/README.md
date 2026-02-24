@@ -22,6 +22,7 @@ npm install
 npm run preflight:collab
 npm run test
 npm run build
+npm run smoke:plugin
 ```
 
 Workflow source of truth: `docs/github-collab.md`.
