@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { findGradientOrSolidReplaceIndex, isGradientPaintType, replaceAtOrPrepend } from "../src/paint-utils";
+import {
+  findGradientOrSolidReplaceIndex,
+  formatApplyPaintNotification,
+  isGradientPaintType,
+  replaceAtOrPrepend
+} from "../src/paint-utils";
 
 describe("paint utils", () => {
   it("detects all supported gradient paint types", () => {
@@ -28,5 +33,27 @@ describe("paint utils", () => {
     const next = replaceAtOrPrepend([{ type: "IMAGE" }], -1, { type: "SOLID" });
     expect(next[0].type).toBe("SOLID");
     expect(next[1].type).toBe("IMAGE");
+  });
+
+  it("formats partial success notification with explicit fallback counts", () => {
+    expect(formatApplyPaintNotification("gradient", {
+      updatedNodes: 2,
+      skippedNoFills: 1,
+      skippedReadonly: 1
+    })).toEqual({
+      message: "Applied gradient to 2 layers (skipped 2: 1 without fills, 1 readonly)",
+      error: false
+    });
+  });
+
+  it("formats failure notification when nothing is editable", () => {
+    expect(formatApplyPaintNotification("OKColor edit", {
+      updatedNodes: 0,
+      skippedNoFills: 2,
+      skippedReadonly: 1
+    })).toEqual({
+      message: "No editable selection (2 without fills, 1 readonly)",
+      error: true
+    });
   });
 });
