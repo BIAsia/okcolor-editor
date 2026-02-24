@@ -13,7 +13,12 @@ import {
   type RegionMask,
   type RGB
 } from "./color";
-import { findGradientOrSolidReplaceIndex, isGradientPaintType, replaceAtOrPrepend } from "./paint-utils";
+import {
+  findGradientOrSolidReplaceIndex,
+  formatApplyPaintNotification,
+  isGradientPaintType,
+  replaceAtOrPrepend
+} from "./paint-utils";
 
 figma.showUI(__html__, { width: 360, height: 520 });
 
@@ -157,9 +162,14 @@ figma.ui.onmessage = (msg) => {
   if (msg.type === "apply-solid-adjustment") {
     const settings = msg.settings as SolidAdjustmentSettings;
     let updatedNodes = 0;
+    let skippedNoFills = 0;
+    let skippedReadonly = 0;
 
     for (const node of figma.currentPage.selection) {
-      if (!("fills" in node)) continue;
+      if (!("fills" in node)) {
+        skippedNoFills += 1;
+        continue;
+      }
 
       const fills = node.fills as ReadonlyArray<Paint>;
       const sourceSolid = fills.find((paint) => paint.type === "SOLID") as SolidPaint | undefined;
@@ -183,23 +193,29 @@ figma.ui.onmessage = (msg) => {
         node.fills = next;
         updatedNodes += 1;
       } catch {
-        // Some nodes expose readonly paints at runtime; skip them.
+        skippedReadonly += 1;
       }
     }
 
-    if (updatedNodes > 0) {
-      figma.notify(`Applied OKColor edit to ${updatedNodes} layer${updatedNodes > 1 ? "s" : ""}`);
-    } else {
-      figma.notify("No selected layers with editable fills", { error: true });
-    }
+    const notification = formatApplyPaintNotification("OKColor edit", {
+      updatedNodes,
+      skippedNoFills,
+      skippedReadonly
+    });
+    figma.notify(notification.message, notification.error ? { error: true } : undefined);
   }
 
   if (msg.type === "apply-gradient") {
     const gradientStops = sanitizeGradientStops(msg.stops as GradientStopMessage[]);
     let updatedNodes = 0;
+    let skippedNoFills = 0;
+    let skippedReadonly = 0;
 
     for (const node of figma.currentPage.selection) {
-      if (!("fills" in node)) continue;
+      if (!("fills" in node)) {
+        skippedNoFills += 1;
+        continue;
+      }
       const fills = node.fills as ReadonlyArray<Paint>;
 
       const sourceGradient = getExistingGradientPaint(fills);
@@ -222,15 +238,16 @@ figma.ui.onmessage = (msg) => {
         node.fills = next;
         updatedNodes += 1;
       } catch {
-        // Some nodes expose readonly paints at runtime; skip them.
+        skippedReadonly += 1;
       }
     }
 
-    if (updatedNodes > 0) {
-      figma.notify(`Applied gradient to ${updatedNodes} layer${updatedNodes > 1 ? "s" : ""}`);
-    } else {
-      figma.notify("No selected layers with editable fills", { error: true });
-    }
+    const notification = formatApplyPaintNotification("gradient", {
+      updatedNodes,
+      skippedNoFills,
+      skippedReadonly
+    });
+    figma.notify(notification.message, notification.error ? { error: true } : undefined);
   }
 
   if (msg.type === "close") {
