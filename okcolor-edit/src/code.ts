@@ -123,8 +123,17 @@ function sanitizeGradientStops(stops: GradientStopMessage[]): ColorStop[] {
   }));
 }
 
+function getExistingGradientPaint(fills: ReadonlyArray<Paint>): GradientPaint | undefined {
+  return fills.find((paint): paint is GradientPaint =>
+    paint.type === "GRADIENT_LINEAR" ||
+    paint.type === "GRADIENT_RADIAL" ||
+    paint.type === "GRADIENT_ANGULAR" ||
+    paint.type === "GRADIENT_DIAMOND"
+  );
+}
+
 function getGradientTransformForNode(fills: ReadonlyArray<Paint>): Transform {
-  const existingGradient = fills.find((paint) => paint.type === "GRADIENT_LINEAR") as GradientPaint | undefined;
+  const existingGradient = getExistingGradientPaint(fills);
   if (existingGradient?.gradientTransform) {
     return existingGradient.gradientTransform;
   }
@@ -150,9 +159,9 @@ figma.ui.onmessage = (msg) => {
 
       const nextSolid: SolidPaint = {
         type: "SOLID",
-        visible: true,
-        opacity: 1,
-        blendMode: "NORMAL",
+        visible: sourceSolid?.visible ?? true,
+        opacity: sourceSolid?.opacity ?? 1,
+        blendMode: sourceSolid?.blendMode ?? "NORMAL",
         color: applySolidAdjustment(baseColor, settings)
       };
 
@@ -184,11 +193,12 @@ figma.ui.onmessage = (msg) => {
       if (!("fills" in node)) continue;
       const fills = node.fills as ReadonlyArray<Paint>;
 
+      const sourceGradient = getExistingGradientPaint(fills);
       const nextGradient: GradientPaint = {
         type: "GRADIENT_LINEAR",
-        visible: true,
-        opacity: 1,
-        blendMode: "NORMAL",
+        visible: sourceGradient?.visible ?? true,
+        opacity: sourceGradient?.opacity ?? 1,
+        blendMode: sourceGradient?.blendMode ?? "NORMAL",
         gradientTransform: getGradientTransformForNode(fills),
         gradientStops
       };
