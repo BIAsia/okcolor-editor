@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "node build.mjs",
+    "build:watch": "node build.mjs --watch",
     "test": "vitest run",
     "test:watch": "vitest"
   },
