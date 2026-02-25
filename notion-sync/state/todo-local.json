@@ -1,0 +1,424 @@
+{
+  "tasks": [
+    {
+      "id": "nt-capture-owner-requests-into-agreements-db",
+      "title": "Capture owner requests into Agreements DB",
+      "status": "Dropped",
+      "priority": "P0"
+    },
+    {
+      "id": "gg-005",
+      "title": "git-governance: add pre-commit and pre-push guardrails",
+      "status": "Todo",
+      "priority": "P1"
+    },
+    {
+      "id": "gg-006",
+      "title": "git-governance: add root ignore policy and SOP guardrails",
+      "status": "Done",
+      "priority": "P0"
+    },
+    {
+      "id": "gg-004",
+      "title": "git-governance: align branch tracking and remote policy",
+      "status": "Done",
+      "priority": "P1"
+    },
+    {
+      "id": "gg-002",
+      "title": "git-governance: clean okcolor branch history and remove mixed commits",
+      "status": "Done",
+      "priority": "P0"
+    },
+    {
+      "id": "gg-007",
+      "title": "git-governance: enforce cloud-verified progress reporting",
+      "status": "Done",
+      "priority": "P0"
+    },
+    {
+      "id": "gg-001",
+      "title": "git-governance: isolate mixed branch and repo boundary repair",
+      "status": "Done",
+      "priority": "P0"
+    },
+    {
+      "id": "gg-003",
+      "title": "git-governance: split mona-home and okcolor repository boundary",
+      "status": "Done",
+      "priority": "P0"
+    },
+    {
+      "id": "nt-initialize-mona-home-structure",
+      "title": "Initialize Mona Home structure",
+      "status": "Done",
+      "priority": "P1"
+    },
+    {
+      "id": "nt-keep-to-do-list-updated-daily",
+      "title": "Keep To-Do list updated daily",
+      "status": "Dropped",
+      "priority": "P0"
+    },
+    {
+      "id": "nt-metal-shader-pack-day1-implement-first-6-shaders",
+      "title": "metal-shader-pack: day1 implement first 6 shaders with previews",
+      "status": "Done",
+      "priority": "P1"
+    },
+    {
+      "id": "nt-metal-shader-pack-day1-lock-shader-list-and-nami",
+      "title": "metal-shader-pack: day1 lock shader list and naming",
+      "status": "Done",
+      "priority": "P1"
+    },
+    {
+      "id": "nt-metal-shader-pack-day1-scaffold-spec-and-repo-la",
+      "title": "metal-shader-pack: day1 scaffold spec and repo layout drafted",
+      "status": "Done",
+      "priority": "P1"
+    },
+    {
+      "id": "nt-metal-shader-pack-day1-scaffold-swift-package-an",
+      "title": "metal-shader-pack: day1 scaffold swift package and demo app",
+      "status": "Done",
+      "priority": "P1"
+    },
+    {
+      "id": "nt-metal-shader-pack-day2-finalize-docs-quickstart-",
+      "title": "metal-shader-pack: day2 finalize docs quickstart integration faq",
+      "status": "Todo",
+      "priority": "P1"
+    },
+    {
+      "id": "nt-metal-shader-pack-day2-implement-remaining-6-sha",
+      "title": "metal-shader-pack: day2 implement remaining 6 shaders",
+      "status": "Todo",
+      "priority": "P1"
+    },
+    {
+      "id": "nt-metal-shader-pack-day2-produce-cover-and-two-dem",
+      "title": "metal-shader-pack: day2 produce cover and two demo clips",
+      "status": "Todo",
+      "priority": "P1"
+    },
+    {
+      "id": "nt-metal-shader-pack-day3-draft-launch-thread-and-f",
+      "title": "metal-shader-pack: day3 draft launch thread and follow-up tweet",
+      "status": "Todo",
+      "priority": "P1"
+    },
+    {
+      "id": "nt-metal-shader-pack-day3-finalize-checkout-copy-an",
+      "title": "metal-shader-pack: day3 finalize checkout copy and release checklist",
+      "status": "Todo",
+      "priority": "P1"
+    },
+    {
+      "id": "nt-metal-shader-pack-v1-launch-pricing-and-scope-lo",
+      "title": "metal-shader-pack: v1 launch pricing and scope locked",
+      "status": "Done",
+      "priority": "P1"
+    },
+    {
+      "id": "nt-notion-sync-route-agreements-to-dedicated-db-wit",
+      "title": "notion-sync: route agreements to dedicated DB with local-first logging",
+      "status": "Done",
+      "priority": "P0"
+    },
+    {
+      "id": "nt-okcolor-edit-add-custom-a-b-curve-controls",
+      "title": "okcolor-edit: add custom a/b curve controls",
+      "status": "Done",
+      "priority": "P1"
+    },
+    {
+      "id": "nt-okcolor-edit-basic-undo-stack-in-ui-state",
+      "title": "okcolor-edit: Basic undo stack in UI state",
+      "status": "Done",
+      "priority": "P1"
+    },
+    {
+      "id": "nt-okcolor-edit-git-governance-add-root-ignore-poli",
+      "title": "okcolor-edit: git governance add root ignore policy and SOP guardrails",
+      "status": "Done",
+      "priority": "P0"
+    },
+    {
+      "id": "nt-okcolor-edit-m1-multi-stop-gradient-preview-cont",
+      "title": "okcolor-edit: M1 multi-stop gradient preview controls committed",
+      "status": "Dropped",
+      "priority": "P1"
+    },
+    {
+      "id": "nt-okcolor-edit-m1-multi-stop-oklch-gradient-editor",
+      "title": "okcolor-edit: M1 Multi-stop OKLCH gradient editor",
+      "status": "Dropped",
+      "priority": "P1"
+    },
+    {
+      "id": "nt-okcolor-edit-m2-preset-curves-contrast-filmic-pa",
+      "title": "okcolor-edit: M2 Preset curves (contrast/filmic/pastel recover)",
+      "status": "Todo",
+      "priority": "P2"
+    },
+    {
+      "id": "nt-okcolor-edit-m3-gamut-warning-clipping-strategy-",
+      "title": "okcolor-edit: M3 Gamut warning + clipping strategy switch",
+      "status": "Dropped",
+      "priority": "P1"
+    },
+    {
+      "id": "nt-okcolor-edit-m4-batch-apply-to-multi-selection",
+      "title": "okcolor-edit: M4 Batch apply to multi-selection",
+      "status": "Dropped",
+      "priority": "P1"
+    },
+    {
+      "id": "nt-okcolor-edit-m5-basic-undo-redo-stack-ui-state",
+      "title": "okcolor-edit: M5 Basic undo/redo stack (UI state)",
+      "status": "Todo",
+      "priority": "P2"
+    },
+    {
+      "id": "nt-okcolor-edit-p0-add-figma-manual-e2e-acceptance-",
+      "title": "okcolor-edit: p0 add figma manual e2e acceptance checklist and release gate",
+      "status": "Dropped",
+      "priority": "P0"
+    },
+    {
+      "id": "nt-okcolor-edit-p0-domain-deep-dive-figma-plugin-ru",
+      "title": "okcolor-edit: p0 domain deep-dive figma plugin runtime docs and ui patterns",
+      "status": "Dropped",
+      "priority": "P0"
+    },
+    {
+      "id": "nt-okcolor-edit-p0-feature-ship-curve-workflow-ui-v",
+      "title": "okcolor-edit: p0 feature ship curve workflow ui (visual bezier editor + presets + realtime curv…",
+      "status": "Done",
+      "priority": "P0"
+    },
+    {
+      "id": "nt-okcolor-edit-p0-feature-ship-domain-foundation-o",
+      "title": "okcolor-edit: p0 feature ship domain foundation (official docs digest + stable local test harne…",
+      "status": "Done",
+      "priority": "P0"
+    },
+    {
+      "id": "nt-okcolor-edit-p0-feature-ship-interaction-core-li",
+      "title": "okcolor-edit: p0 feature ship interaction core (live preview + apply-to-selection + explicit fa…",
+      "status": "Done",
+      "priority": "P0"
+    },
+    {
+      "id": "nt-okcolor-edit-p0-feature-ship-release-evidence-au",
+      "title": "okcolor-edit: p0 feature ship release evidence automation and automated gate pass",
+      "status": "Done",
+      "priority": "P0"
+    },
+    {
+      "id": "nt-okcolor-edit-p0-feature-ship-release-readiness-s",
+      "title": "okcolor-edit: p0 feature ship release readiness (single runtime path + figma e2e pass + rc chec…",
+      "status": "Done",
+      "priority": "P0"
+    },
+    {
+      "id": "nt-okcolor-edit-p0-harden-apply-to-selection-with-r",
+      "title": "okcolor-edit: p0 harden apply-to-selection with result feedback and failure reasons",
+      "status": "Dropped",
+      "priority": "P0"
+    },
+    {
+      "id": "nt-okcolor-edit-p0-implement-realtime-preview-pipel",
+      "title": "okcolor-edit: p0 implement realtime preview pipeline for selected solid fill",
+      "status": "Dropped",
+      "priority": "P0"
+    },
+    {
+      "id": "nt-okcolor-edit-p0-release-candidate-publish-checkl",
+      "title": "okcolor-edit: p0 release candidate publish checklist and rollback plan",
+      "status": "Dropped",
+      "priority": "P0"
+    },
+    {
+      "id": "nt-okcolor-edit-p0-root-cause-live-preview-and-appl",
+      "title": "okcolor-edit: p0 root-cause live preview and apply no-op reproduce matrix",
+      "status": "Dropped",
+      "priority": "P0"
+    },
+    {
+      "id": "nt-okcolor-edit-p0-strengthen-doc-reading-and-memor",
+      "title": "okcolor-edit: p0 strengthen doc-reading and memory workflow via openclaw skills pipeline",
+      "status": "Dropped",
+      "priority": "P0"
+    },
+    {
+      "id": "nt-okcolor-edit-p0-unify-single-plugin-runtime-path",
+      "title": "okcolor-edit: p0 unify single plugin runtime path and remove branch artifact drift",
+      "status": "Dropped",
+      "priority": "P0"
+    },
+    {
+      "id": "nt-okcolor-edit-p1-build-curve-editor-ui-with-visua",
+      "title": "okcolor-edit: p1 build curve editor ui with visual bezier and control points",
+      "status": "Dropped",
+      "priority": "P1"
+    },
+    {
+      "id": "nt-okcolor-edit-pr3-fix-figma-parser-compatibility-",
+      "title": "okcolor-edit: pr3 fix figma parser compatibility and local testing workflow",
+      "status": "Done",
+      "priority": "P1"
+    },
+    {
+      "id": "nt-okcolor-edit-preserve-fill-stack-when-applying-s",
+      "title": "okcolor-edit: preserve fill stack when applying solid/gradient ( )",
+      "status": "Done",
+      "priority": "P1"
+    },
+    {
+      "id": "nt-okcolor-edit-solid-apply-now-works-on-all-editab",
+      "title": "okcolor-edit: solid apply now works on all editable fills",
+      "status": "Done",
+      "priority": "P1"
+    },
+    {
+      "id": "nt-okcolor-edit-v0-2-apply-gradient-stops-to-select",
+      "title": "okcolor-edit: v0.2 apply gradient stops to selected layers",
+      "status": "Done",
+      "priority": "P1"
+    },
+    {
+      "id": "nt-okcolor-edit-v0-2-batch-apply-undo-redo-sync",
+      "title": "okcolor-edit: v0.2 batch apply + undo/redo sync",
+      "status": "Dropped",
+      "priority": "P1"
+    },
+    {
+      "id": "nt-okcolor-edit-v0-2-batch-apply-solid-fill-edits-t",
+      "title": "okcolor-edit: v0.2 batch apply solid-fill edits to multi-selection (completed)",
+      "status": "Done",
+      "priority": "P0"
+    },
+    {
+      "id": "nt-okcolor-edit-v0-2-gradient-stop-color-editor-pal",
+      "title": "okcolor-edit: v0.2 gradient stop color editor + palette presets",
+      "status": "Dropped",
+      "priority": "P1"
+    },
+    {
+      "id": "nt-okcolor-edit-v0-2-multi-stop-gradient-editor-3-5",
+      "title": "okcolor-edit: v0.2 multi-stop gradient editor (3-5 stops)",
+      "status": "Done",
+      "priority": "P1"
+    },
+    {
+      "id": "nt-okcolor-edit-v0-2-multi-stop-gradient-preview-sh",
+      "title": "okcolor-edit: v0.2 multi-stop gradient preview shipped",
+      "status": "Done",
+      "priority": "P1"
+    },
+    {
+      "id": "nt-okcolor-edit-v0-2-planning-pr",
+      "title": "okcolor-edit: v0.2 planning PR",
+      "status": "Dropped",
+      "priority": "P2"
+    },
+    {
+      "id": "nt-okcolor-edit-v0-2-preset-curve-packs",
+      "title": "okcolor-edit: v0.2 preset curve packs",
+      "status": "Done",
+      "priority": "P1"
+    },
+    {
+      "id": "nt-okcolor-edit-v0-2-true-gamut-detection-policy-ha",
+      "title": "okcolor-edit: v0.2 true gamut detection + policy handling",
+      "status": "Dropped",
+      "priority": "P1"
+    },
+    {
+      "id": "nt-okcolor-edit-v0-3-added-oklab-histogram-waveform",
+      "title": "okcolor-edit: v0.3 Added Oklab histogram + waveform diagnostics",
+      "status": "Done",
+      "priority": "P1"
+    },
+    {
+      "id": "nt-okcolor-edit-v0-3-anchored-gradient-endpoints-fo",
+      "title": "okcolor-edit: v0.3 anchored gradient endpoints for sparse stops",
+      "status": "Done",
+      "priority": "P1"
+    },
+    {
+      "id": "nt-okcolor-edit-v0-3-gradient-apply-replace-existin",
+      "title": "okcolor-edit: v0.3 gradient apply replace existing gradient (no duplicate fills)",
+      "status": "Done",
+      "priority": "P1"
+    },
+    {
+      "id": "nt-okcolor-edit-v0-3-gradient-apply-robustness-on-e",
+      "title": "okcolor-edit: v0.3 gradient apply robustness on editable/empty fills",
+      "status": "Done",
+      "priority": "P1"
+    },
+    {
+      "id": "nt-okcolor-edit-v0-3-mask-scope-preview",
+      "title": "okcolor-edit: v0.3 mask scope preview",
+      "status": "Done",
+      "priority": "P1"
+    },
+    {
+      "id": "nt-okcolor-edit-v0-3-per-layer-solid-adjustment-app",
+      "title": "okcolor-edit: v0.3 per-layer solid adjustment apply",
+      "status": "Done",
+      "priority": "P0"
+    },
+    {
+      "id": "nt-okcolor-edit-v0-3-preserve-gradient-paint-type-o",
+      "title": "okcolor-edit: v0.3 preserve gradient paint type on apply",
+      "status": "Done",
+      "priority": "P1"
+    },
+    {
+      "id": "nt-okcolor-edit-v0-3-preserve-paint-blend-opacity-o",
+      "title": "okcolor-edit: v0.3 preserve paint blend/opacity on apply",
+      "status": "Done",
+      "priority": "P1"
+    },
+    {
+      "id": "nt-okcolor-edit-v0-3-preserve-per-layer-gradient-di",
+      "title": "okcolor-edit: v0.3 preserve per-layer gradient direction on apply ( )",
+      "status": "Done",
+      "priority": "P1"
+    },
+    {
+      "id": "nt-okcolor-edit-v0-3-region-mask-l-c-range-feather-",
+      "title": "okcolor-edit: v0.3 region mask (L/C range + feather) implemented and verified",
+      "status": "Done",
+      "priority": "P1"
+    },
+    {
+      "id": "nt-okcolor-edit-v0-3-save-load-adjustment-recipes",
+      "title": "okcolor-edit: v0.3 save/load adjustment recipes",
+      "status": "Done",
+      "priority": "P1"
+    },
+    {
+      "id": "nt-okcolor-edit-v0-3-side-panel-polish-en-zh-cn-i18",
+      "title": "okcolor-edit: v0.3 side panel polish + EN/zh-CN i18n toggle",
+      "status": "Done",
+      "priority": "P1"
+    },
+    {
+      "id": "nt-promote-recurring-tasks-to-automation",
+      "title": "Promote recurring tasks to automation",
+      "status": "Done",
+      "priority": "P0"
+    },
+    {
+      "id": "nt-weekly-review-mona-home",
+      "title": "Weekly review Mona Home",
+      "status": "Todo",
+      "priority": "P1"
+    }
+  ]
+}
