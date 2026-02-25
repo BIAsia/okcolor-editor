@@ -16,4 +16,17 @@ final class ShaderCatalogTests: XCTestCase {
         XCTAssertEqual(ShaderCatalog.functionName(for: .mspSoftBloom), "msp_soft_bloom")
         XCTAssertEqual(ShaderCatalog.functionName(for: .mspVignetteFocus), "msp_vignette_focus")
     }
+
+    func testPreviewCatalogCoversFirstSixOnly() {
+        XCTAssertEqual(MSPPreviewCatalog.firstSix.count, 6)
+
+        for preset in MSPPreviewCatalog.firstSix {
+            XCTAssertNotNil(ShaderCatalog.functionName(for: preset.shader))
+            XCTAssertFalse(preset.displayName.isEmpty)
+            XCTAssertFalse(preset.subtitle.isEmpty)
+        }
+
+        XCTAssertNil(MSPPreviewCatalog.preview(for: .mspFilmGrain))
+        XCTAssertNil(MSPPreviewCatalog.preview(for: .mspEdgeGlow))
+    }
 }
