@@ -18,7 +18,7 @@
       if (!node || !("fills" in node)) return;
       const fills = node.fills;
       const next = fills.map(
-        (p) => p.type === "SOLID" ? { ...p, color: msg.color } : p
+        (p) => p.type === "SOLID" ? Object.assign({}, p, { color: msg.color }) : p
       );
       node.fills = next;
       figma.notify("Applied OKColor edit");
