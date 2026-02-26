@@ -9,7 +9,7 @@ await build({
   outfile: "dist/code.js",
   platform: "browser",
   format: "iife",
-  target: "es2020"
+  target: "es2015"
 });
 
 await build({
@@ -18,7 +18,7 @@ await build({
   outfile: "dist/ui.js",
   platform: "browser",
   format: "esm",
-  target: "es2020"
+  target: "es2015"
 });
 
 await copyFile("ui/index.html", "dist/ui.html");

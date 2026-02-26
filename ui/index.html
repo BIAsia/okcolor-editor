@@ -10,11 +10,15 @@
     .panel { background:var(--panel); border:1px solid #ddd5c8; border-radius:10px; padding:10px; margin-bottom:10px; }
     label { display:block; margin:6px 0 4px; font-weight:600; }
     input[type="range"] { width:100%; }
+    input[type="color"] { width: 100%; height: 34px; border: 1px solid #ddd5c8; border-radius: 6px; background: #fff; }
+    input[type="text"] { width: 100%; box-sizing: border-box; padding: 7px 8px; border: 1px solid #ddd5c8; border-radius: 6px; background: #fff; }
     button { border:0; background:var(--accent); color:#fff; border-radius:8px; padding:8px 10px; cursor:pointer; }
+    button:disabled { opacity: 0.45; cursor: not-allowed; }
     .row { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
     .small { font-size:12px; opacity:0.75; }
     .warn { color: var(--warn); font-weight: 600; }
     canvas { width: 100%; height: 28px; border-radius: 6px; border: 1px solid #ddd5c8; }
+    #curveEditor { height: 120px; cursor: crosshair; }
     .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; }
     select { width: 100%; padding: 6px; border-radius: 6px; border: 1px solid #ddd5c8; background: #fff; }
   </style>
@@ -22,44 +26,130 @@
 <body>
   <div class="wrap">
     <div class="panel">
-      <div><strong>okcolor edit</strong></div>
-      <div class="small">Oklab/Oklch conversion, gradient, curve, gamut policy</div>
+      <div><strong data-i18n="title">okcolor edit</strong></div>
+      <div class="small" data-i18n="subtitle">Oklab/Oklch conversion, gradient, curve, gamut policy</div>
+      <label data-i18n="languageLabel">Language</label>
+      <select id="locale">
+        <option value="en">English</option>
+        <option value="zh-CN">简体中文</option>
+      </select>
     </div>
 
     <div class="panel">
-      <label>L shift</label><input id="l" type="range" min="-0.2" max="0.2" step="0.005" value="0" />
-      <label>a shift</label><input id="a" type="range" min="-0.2" max="0.2" step="0.005" value="0" />
-      <label>b shift</label><input id="b" type="range" min="-0.2" max="0.2" step="0.005" value="0" />
+      <label data-i18n="lShift">L shift</label><input id="l" type="range" min="-0.2" max="0.2" step="0.005" value="0" />
+      <label data-i18n="aShift">a shift</label><input id="a" type="range" min="-0.2" max="0.2" step="0.005" value="0" />
+      <label data-i18n="bShift">b shift</label><input id="b" type="range" min="-0.2" max="0.2" step="0.005" value="0" />
       <div class="row">
-        <div><label>C shift</label><input id="c" type="range" min="-0.2" max="0.2" step="0.005" value="0" /></div>
-        <div><label>H shift</label><input id="h" type="range" min="-180" max="180" step="1" value="0" /></div>
+        <div><label data-i18n="cShift">C shift</label><input id="c" type="range" min="-0.2" max="0.2" step="0.005" value="0" /></div>
+        <div><label data-i18n="hShift">H shift</label><input id="h" type="range" min="-180" max="180" step="1" value="0" /></div>
       </div>
+      <label data-i18n="maskFeatherLabel">Mask feather</label><input id="maskFeather" type="range" min="0" max="0.2" step="0.005" value="0.04" />
+      <div class="row">
+        <div><label data-i18n="maskLRangeLabel">L range min/max</label><input id="maskLMin" type="range" min="0" max="1" step="0.01" value="0" /><input id="maskLMax" type="range" min="0" max="1" step="0.01" value="1" /></div>
+        <div><label data-i18n="maskCRangeLabel">C range min/max</label><input id="maskCMin" type="range" min="0" max="0.4" step="0.005" value="0" /><input id="maskCMax" type="range" min="0" max="0.4" step="0.005" value="0.4" /></div>
+      </div>
+      <div class="small mono" id="maskHint">mask weight: 1.00</div>
+      <label data-i18n="maskScopeLabel">Mask scope over gradient</label>
+      <canvas id="maskScope" width="320" height="44"></canvas>
     </div>
 
     <div class="panel">
-      <label>Curve midpoint (L channel)</label>
+      <label data-i18n="curvePackLabel">Curve pack</label>
+      <select id="curvePack">
+        <option value="custom" data-i18n="curvePackCustom">custom</option>
+        <option value="contrast" data-i18n="curveContrast">contrast</option>
+        <option value="filmic" data-i18n="curveFilmic">filmic</option>
+        <option value="pastel-recover" data-i18n="curvePastel">pastel recover</option>
+      </select>
+      <label data-i18n="curvePresetLabel">Curve preset (L channel)</label>
+      <select id="curvePreset">
+        <option value="custom" data-i18n="curveCustom">custom midpoint</option>
+        <option value="contrast" data-i18n="curveContrast">contrast</option>
+        <option value="filmic" data-i18n="curveFilmic">filmic</option>
+        <option value="pastel-recover" data-i18n="curvePastel">pastel recover</option>
+      </select>
+      <label data-i18n="curveMidLabel">Curve midpoint (L, custom only)</label>
       <input id="curveMid" type="range" min="0" max="1" step="0.01" value="0.5" />
-      <div class="small mono" id="curveHint">curve: (0,0) -> (0.5,0.5) -> (1,1)</div>
+      <label data-i18n="curveMidALabel">Curve midpoint (a, custom)</label>
+      <input id="curveMidA" type="range" min="0" max="1" step="0.01" value="0.5" />
+      <label data-i18n="curveMidBLabel">Curve midpoint (b, custom)</label>
+      <input id="curveMidB" type="range" min="0" max="1" step="0.01" value="0.5" />
+      <canvas id="curveEditor" width="320" height="120"></canvas>
+      <div class="small mono" id="curveHint">curve L/a/b: (0,0) -> (0.5,0.5) -> (1,1)</div>
     </div>
 
     <div class="panel">
-      <label>Gradient end hue shift</label>
-      <input id="gradHue" type="range" min="-180" max="180" step="1" value="45" />
+      <label data-i18n="gradientPaletteLabel">Gradient palette</label>
+      <select id="gradPalette">
+        <option value="custom" data-i18n="paletteCustom">custom</option>
+        <option value="sunrise" data-i18n="paletteSunrise">sunrise</option>
+        <option value="ocean" data-i18n="paletteOcean">ocean</option>
+        <option value="candy" data-i18n="paletteCandy">candy</option>
+        <option value="complementary" data-i18n="paletteComplementary">complementary</option>
+      </select>
+      <label data-i18n="startStopLabel">Start stop color</label>
+      <input id="gradStartColor" type="color" value="#808080" />
+      <label data-i18n="middlePosLabel">Middle stop position</label>
+      <input id="gradMidPos" type="range" min="0.1" max="0.9" step="0.01" value="0.5" />
+      <label data-i18n="middleColorLabel">Middle stop color</label>
+      <input id="gradMidColor" type="color" value="#14b8a6" />
+      <div class="row">
+        <div>
+          <label><input id="gradStop2Enabled" type="checkbox" /> <span data-i18n="extraStop2Label">Extra stop A</span></label>
+          <input id="gradStop2Pos" type="range" min="0.05" max="0.95" step="0.01" value="0.25" />
+          <input id="gradStop2Color" type="color" value="#22d3ee" />
+        </div>
+        <div>
+          <label><input id="gradStop4Enabled" type="checkbox" /> <span data-i18n="extraStop4Label">Extra stop B</span></label>
+          <input id="gradStop4Pos" type="range" min="0.05" max="0.95" step="0.01" value="0.75" />
+          <input id="gradStop4Color" type="color" value="#a78bfa" />
+        </div>
+      </div>
+      <label data-i18n="endStopLabel">End stop color</label>
+      <input id="gradEndColor" type="color" value="#6366f1" />
       <canvas id="gradPreview" width="320" height="28"></canvas>
     </div>
 
     <div class="panel">
-      <label>Gamut policy</label>
-      <select id="gamutPolicy">
-        <option value="clip">clip</option>
-        <option value="compress">compress</option>
-        <option value="warn">warn + clip</option>
+      <label data-i18n="recipesLabel">Adjustment recipes</label>
+      <select id="recipeList">
+        <option value="" data-i18n="recipePlaceholder">(select saved recipe)</option>
       </select>
-      <div id="gamutStatus" class="small"></div>
-      <button id="apply">Apply to selection</button>
+      <div class="row">
+        <button id="loadRecipe" type="button" data-i18n="load">Load</button>
+        <button id="deleteRecipe" type="button" data-i18n="delete">Delete</button>
+      </div>
+      <label data-i18n="recipeNameLabel">Recipe name</label>
+      <input id="recipeName" type="text" data-i18n-placeholder="recipeNamePlaceholder" placeholder="e.g. soft filmic teal" />
+      <button id="saveRecipe" type="button" data-i18n="saveCurrent">Save current settings</button>
     </div>
 
-    <div class="panel small">Tip: select a layer with SOLID fill first.</div>
+    <div class="panel">
+      <label data-i18n="histogramLabel">Oklab histogram (L/a/b)</label>
+      <canvas id="labHistogram" width="320" height="72"></canvas>
+      <label data-i18n="waveformLabel">Oklab waveform (L/a/b)</label>
+      <canvas id="labWaveform" width="320" height="72"></canvas>
+    </div>
+
+    <div class="panel">
+      <label data-i18n="gamutPolicyLabel">Gamut policy</label>
+      <select id="gamutPolicy">
+        <option value="clip" data-i18n="gamutClip">clip</option>
+        <option value="compress" data-i18n="gamutCompress">compress</option>
+        <option value="warn" data-i18n="gamutWarn">warn + clip</option>
+      </select>
+      <div id="gamutStatus" class="small"></div>
+      <div class="row">
+        <button id="undo" type="button" data-i18n="undo">Undo</button>
+        <button id="redo" type="button" data-i18n="redo">Redo</button>
+      </div>
+      <div class="row">
+        <button id="apply" type="button" data-i18n="applySolid">Apply solid</button>
+        <button id="applyGradient" type="button" data-i18n="applyGradient">Apply gradient</button>
+      </div>
+    </div>
+
+    <div class="panel small" data-i18n="tip">Tip: select a layer with SOLID fill first.</div>
   </div>
 
   <script type="module" src="./ui.js"></script>
