@@ -95,11 +95,11 @@ var CURVE_PRESETS = {
   ]
 };
 function getCurvePreset(id) {
-  return CURVE_PRESETS[id].map((point) => ({ ...point }));
+  return CURVE_PRESETS[id].map((point) => Object.assign({}, point));
 }
 function applyCurve(value, points) {
   const x = clamp01(value);
-  const sorted = [...points].sort((p, q) => p.x - q.x);
+  const sorted = points.slice().sort((p, q) => p.x - q.x);
   if (sorted.length === 0) return x;
   if (x <= sorted[0].x) return clamp01(sorted[0].y);
   for (let i = 1; i < sorted.length; i++) {
@@ -153,15 +153,15 @@ function computeRegionMaskWeight(lch, mask) {
 }
 function gradientRampFromStops(stops, steps) {
   const count = Math.max(2, Math.floor(steps));
-  const normalizedStops = [...stops].map((stop) => ({
+  const normalizedStops = stops.slice().map((stop) => ({
     position: clamp01(stop.position),
     color: stop.color
   })).sort((left, right) => left.position - right.position);
   if (normalizedStops.length < 2) {
     const fallback = normalizedStops[0]?.color ?? { r: 0, g: 0, b: 0 };
-    return Array.from({ length: count }, () => ({ ...fallback }));
+    return Array.from({ length: count }, () => Object.assign({}, fallback));
   }
-  const anchoredStops = [...normalizedStops];
+  const anchoredStops = normalizedStops.slice();
   if (anchoredStops[0].position > 0) {
     anchoredStops.unshift({ position: 0, color: anchoredStops[0].color });
   }
@@ -472,13 +472,11 @@ function updateHistoryButtons() {
 }
 function normalizeRecipeState(state) {
   const fallback = captureState();
-  return {
-    ...fallback,
-    ...state,
+  return Object.assign({}, fallback, state, {
     curvePack: typeof state?.curvePack === "string" ? state.curvePack : fallback.curvePack,
     curveMidA: typeof state?.curveMidA === "string" ? state.curveMidA : fallback.curveMidA,
     curveMidB: typeof state?.curveMidB === "string" ? state.curveMidB : fallback.curveMidB
-  };
+  });
 }
 function loadRecipes() {
   try {
@@ -486,8 +484,7 @@ function loadRecipes() {
     if (!raw) return [];
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
-    return parsed.filter((recipe) => Boolean(recipe?.name) && Boolean(recipe?.state)).map((recipe) => ({
-      ...recipe,
+    return parsed.filter((recipe) => Boolean(recipe?.name) && Boolean(recipe?.state)).map((recipe) => Object.assign({}, recipe, {
       state: normalizeRecipeState(recipe.state)
     }));
   } catch {
@@ -711,7 +708,7 @@ function computeEditedColor() {
   };
   const rawRgb = oklabToRgbUnclamped(labAfterCurve);
   const gamut = enforceGamut(rawRgb, gamutPolicy.value);
-  return { ...gamut, maskWeight };
+  return Object.assign({}, gamut, { maskWeight: maskWeight });
 }
 function getGradientStops() {
   const stops = [
@@ -758,7 +755,7 @@ function renderLabHistogram() {
     channels.a[Math.min(bins - 1, Math.max(0, Math.floor((sample.a + 0.4) / 0.8 * bins)))] += 1;
     channels.b[Math.min(bins - 1, Math.max(0, Math.floor((sample.b + 0.4) / 0.8 * bins)))] += 1;
   }
-  const maxBin = Math.max(1, ...channels.l, ...channels.a, ...channels.b);
+  const maxBin = Math.max.apply(null, [1].concat(channels.l, channels.a, channels.b));
   ctx.clearRect(0, 0, width, height);
   ctx.fillStyle = "#fff";
   ctx.fillRect(0, 0, width, height);

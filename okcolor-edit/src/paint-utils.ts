@@ -23,7 +23,7 @@ export function replaceAtOrPrepend<T>(items: ReadonlyArray<T>, index: number, ne
   if (index >= 0 && index < items.length) {
     return items.map((item, itemIndex) => (itemIndex === index ? nextItem : item));
   }
-  return [nextItem, ...items];
+  return [nextItem].concat(items);
 }
 
 export function formatApplyPaintNotification(actionLabel: string, stats: ApplyPaintStats): {

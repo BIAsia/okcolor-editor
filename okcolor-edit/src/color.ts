@@ -144,12 +144,12 @@ const CURVE_PRESETS: Record<Exclude<CurvePresetId, "custom">, CurvePoint[]> = {
 };
 
 export function getCurvePreset(id: Exclude<CurvePresetId, "custom">): CurvePoint[] {
-  return CURVE_PRESETS[id].map((point) => ({ ...point }));
+  return CURVE_PRESETS[id].map((point) => Object.assign({}, point));
 }
 
 export function applyCurve(value: number, points: CurvePoint[]): number {
   const x = clamp01(value);
-  const sorted = [...points].sort((p, q) => p.x - q.x);
+  const sorted = points.slice().sort((p, q) => p.x - q.x);
   if (sorted.length === 0) return x;
   if (x <= sorted[0].x) return clamp01(sorted[0].y);
   for (let i = 1; i < sorted.length; i++) {
@@ -248,7 +248,7 @@ export type GradientStop = {
 
 export function gradientRampFromStops(stops: GradientStop[], steps: number): RGB[] {
   const count = Math.max(2, Math.floor(steps));
-  const normalizedStops = [...stops]
+  const normalizedStops = stops.slice()
     .map((stop) => ({
       position: clamp01(stop.position),
       color: stop.color
@@ -257,10 +257,10 @@ export function gradientRampFromStops(stops: GradientStop[], steps: number): RGB
 
   if (normalizedStops.length < 2) {
     const fallback = normalizedStops[0]?.color ?? { r: 0, g: 0, b: 0 };
-    return Array.from({ length: count }, () => ({ ...fallback }));
+    return Array.from({ length: count }, () => Object.assign({}, fallback));
   }
 
-  const anchoredStops = [...normalizedStops];
+  const anchoredStops = normalizedStops.slice();
   if (anchoredStops[0].position > 0) {
     anchoredStops.unshift({ position: 0, color: anchoredStops[0].color });
   }

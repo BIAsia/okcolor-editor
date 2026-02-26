@@ -407,13 +407,11 @@ function updateHistoryButtons(): void {
 
 function normalizeRecipeState(state: Partial<UiState> | undefined): UiState {
   const fallback = captureState();
-  return {
-    ...fallback,
-    ...state,
+  return Object.assign({}, fallback, state, {
     curvePack: typeof state?.curvePack === "string" ? state.curvePack as Exclude<CurvePresetId, "custom"> | "custom" : fallback.curvePack,
     curveMidA: typeof state?.curveMidA === "string" ? state.curveMidA : fallback.curveMidA,
     curveMidB: typeof state?.curveMidB === "string" ? state.curveMidB : fallback.curveMidB
-  };
+  });
 }
 
 function loadRecipes(): SavedRecipe[] {
@@ -424,8 +422,7 @@ function loadRecipes(): SavedRecipe[] {
     if (!Array.isArray(parsed)) return [];
     return parsed
       .filter((recipe) => Boolean(recipe?.name) && Boolean(recipe?.state))
-      .map((recipe) => ({
-        ...recipe,
+      .map((recipe) => Object.assign({}, recipe, {
         state: normalizeRecipeState(recipe.state)
       }));
   } catch {
@@ -701,7 +698,7 @@ function computeEditedColor(): { rgb: RGB; clipped: boolean; maskWeight: number 
 
   const rawRgb = oklabToRgbUnclamped(labAfterCurve);
   const gamut = enforceGamut(rawRgb, gamutPolicy.value as GamutPolicy);
-  return { ...gamut, maskWeight };
+  return Object.assign({}, gamut, { maskWeight: maskWeight });
 }
 
 function getGradientStops(): Array<{ position: number; color: RGB }> {
@@ -759,7 +756,7 @@ function renderLabHistogram(): void {
     channels.b[Math.min(bins - 1, Math.max(0, Math.floor(((sample.b + 0.4) / 0.8) * bins)))] += 1;
   }
 
-  const maxBin = Math.max(1, ...channels.l, ...channels.a, ...channels.b);
+  const maxBin = Math.max.apply(null, [1].concat(channels.l, channels.a, channels.b));
   ctx.clearRect(0, 0, width, height);
   ctx.fillStyle = "#fff";
   ctx.fillRect(0, 0, width, height);
