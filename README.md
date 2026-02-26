@@ -5,20 +5,30 @@ A Figma plugin prototype that brings illustration-style color editing to Oklab/O
 ## Features (current)
 
 - Oklab/Oklch conversion
-- Oklch gradient interpolation (shortest hue path) with preview ramp
+- Oklch multi-stop gradient interpolation (shortest hue path) with preview ramp
 - Oklab channel shifts (L/a/b)
 - Oklch channel shifts (L/C/H)
+- Region mask by luminance/chroma range with feather control
 - Curve operation for L/a/b channels in Oklab space (L midpoint control in UI)
 - Gamut policy handling: clip, compress, warn+clip
-- Apply edited color to selected solid fill layer
+- Apply edited color to all selected layers with editable fills (adds/replaces SOLID fill)
+- Apply multi-stop Oklch gradient (3 to 5 stops from the editor) to selected layers with editable fills (adds/replaces gradient)
+- Save/load named adjustment recipes in plugin-local storage
 
 ## Local development
 
 ```bash
 npm install
+npm run preflight:collab
 npm run test
 npm run build
+npm run smoke:plugin
+npm run release:check
+npm run release:evidence
 ```
+
+Workflow source of truth: `docs/github-collab.md`.
+Release gate and RC checklist: `docs/release-readiness-checklist.md`.
 
 Load plugin in Figma (Development):
 
@@ -29,6 +39,6 @@ Load plugin in Figma (Development):
 
 ## Current limits
 
-- UI currently edits selected SOLID fill only
-- Gradient editing logic is in core but not exposed with a full visual editor yet
-- Curve is implemented in core and prepared for UI binding
+- UI edits all currently selected layers that expose editable fills
+- Gradient preview now supports editable middle stop position, custom stop colors, and palette presets
+- Curve controls support L/a/b channels (L includes preset packs; a/b use custom midpoint curves)

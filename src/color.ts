@@ -12,8 +12,7 @@ function srgbToLinear(v: number): number {
 }
 
 function linearToSrgb(v: number): number {
-  const c = clamp01(v);
-  return c <= 0.0031308 ? 12.92 * c : 1.055 * Math.pow(c, 1 / 2.4) - 0.055;
+  return v <= 0.0031308 ? 12.92 * v : 1.055 * Math.pow(Math.max(v, 0), 1 / 2.4) - 0.055;
 }
 
 export function rgbToOklab(rgb: RGB): Oklab {
@@ -36,7 +35,7 @@ export function rgbToOklab(rgb: RGB): Oklab {
   };
 }
 
-export function oklabToRgb(lab: Oklab): RGB {
+export function oklabToRgbUnclamped(lab: Oklab): RGB {
   const l_ = lab.l + 0.3963377774 * lab.a + 0.2158037573 * lab.b;
   const m_ = lab.l - 0.1055613458 * lab.a - 0.0638541728 * lab.b;
   const s_ = lab.l - 0.0894841775 * lab.a - 1.291485548 * lab.b;
@@ -50,9 +49,18 @@ export function oklabToRgb(lab: Oklab): RGB {
   const bLin = -0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s;
 
   return {
-    r: clamp01(linearToSrgb(rLin)),
-    g: clamp01(linearToSrgb(gLin)),
-    b: clamp01(linearToSrgb(bLin))
+    r: linearToSrgb(rLin),
+    g: linearToSrgb(gLin),
+    b: linearToSrgb(bLin)
+  };
+}
+
+export function oklabToRgb(lab: Oklab): RGB {
+  const raw = oklabToRgbUnclamped(lab);
+  return {
+    r: clamp01(raw.r),
+    g: clamp01(raw.g),
+    b: clamp01(raw.b)
   };
 }
 
@@ -110,9 +118,38 @@ export function adjustInOklch(
 
 export type CurvePoint = { x: number; y: number };
 
+export type CurvePresetId = "custom" | "contrast" | "filmic" | "pastel-recover";
+
+const CURVE_PRESETS: Record<Exclude<CurvePresetId, "custom">, CurvePoint[]> = {
+  contrast: [
+    { x: 0, y: 0 },
+    { x: 0.25, y: 0.18 },
+    { x: 0.5, y: 0.5 },
+    { x: 0.75, y: 0.84 },
+    { x: 1, y: 1 }
+  ],
+  filmic: [
+    { x: 0, y: 0.05 },
+    { x: 0.2, y: 0.18 },
+    { x: 0.5, y: 0.55 },
+    { x: 0.85, y: 0.92 },
+    { x: 1, y: 0.98 }
+  ],
+  "pastel-recover": [
+    { x: 0, y: 0 },
+    { x: 0.35, y: 0.42 },
+    { x: 0.65, y: 0.72 },
+    { x: 1, y: 0.95 }
+  ]
+};
+
+export function getCurvePreset(id: Exclude<CurvePresetId, "custom">): CurvePoint[] {
+  return CURVE_PRESETS[id].map((point) => Object.assign({}, point));
+}
+
 export function applyCurve(value: number, points: CurvePoint[]): number {
   const x = clamp01(value);
-  const sorted = [...points].sort((p, q) => p.x - q.x);
+  const sorted = points.slice().sort((p, q) => p.x - q.x);
   if (sorted.length === 0) return x;
   if (x <= sorted[0].x) return clamp01(sorted[0].y);
   for (let i = 1; i < sorted.length; i++) {
@@ -170,6 +207,28 @@ export function enforceGamut(rgb: RGB, policy: GamutPolicy): { rgb: RGB; clipped
   };
 }
 
+export type RegionMask = {
+  lMin: number;
+  lMax: number;
+  cMin: number;
+  cMax: number;
+  feather: number;
+};
+
+function edgeWeight(value: number, min: number, max: number, feather: number): number {
+  if (value < min || value > max) return 0;
+  if (feather <= 1e-6) return 1;
+  const fromMin = (value - min) / feather;
+  const toMax = (max - value) / feather;
+  return clamp01(Math.min(fromMin, toMax, 1));
+}
+
+export function computeRegionMaskWeight(lch: Oklch, mask: RegionMask): number {
+  const lWeight = edgeWeight(lch.l, clamp01(mask.lMin), clamp01(mask.lMax), Math.max(0, mask.feather));
+  const cWeight = edgeWeight(lch.c, Math.max(0, mask.cMin), Math.max(0, mask.cMax), Math.max(0, mask.feather));
+  return lWeight * cWeight;
+}
+
 export function gradientRamp(start: RGB, end: RGB, steps: number): RGB[] {
   const a = oklabToOklch(rgbToOklab(start));
   const b = oklabToOklch(rgbToOklab(end));
@@ -179,5 +238,60 @@ export function gradientRamp(start: RGB, end: RGB, steps: number): RGB[] {
     const t = i / (count - 1);
     out.push(oklabToRgb(oklchToOklab(mixOklch(a, b, t))));
   }
+  return out;
+}
+
+export type GradientStop = {
+  position: number;
+  color: RGB;
+};
+
+export function gradientRampFromStops(stops: GradientStop[], steps: number): RGB[] {
+  const count = Math.max(2, Math.floor(steps));
+  const normalizedStops = stops.slice()
+    .map((stop) => ({
+      position: clamp01(stop.position),
+      color: stop.color
+    }))
+    .sort((left, right) => left.position - right.position);
+
+  if (normalizedStops.length < 2) {
+    const fallback = normalizedStops[0]?.color ?? { r: 0, g: 0, b: 0 };
+    return Array.from({ length: count }, () => Object.assign({}, fallback));
+  }
+
+  const anchoredStops = normalizedStops.slice();
+  if (anchoredStops[0].position > 0) {
+    anchoredStops.unshift({ position: 0, color: anchoredStops[0].color });
+  }
+  if (anchoredStops[anchoredStops.length - 1].position < 1) {
+    anchoredStops.push({ position: 1, color: anchoredStops[anchoredStops.length - 1].color });
+  }
+
+  const lchStops = anchoredStops.map((stop) => ({
+    position: stop.position,
+    lch: oklabToOklch(rgbToOklab(stop.color))
+  }));
+
+  const out: RGB[] = [];
+  for (let i = 0; i < count; i++) {
+    const t = i / (count - 1);
+
+    let rightIndex = lchStops.findIndex((stop) => t <= stop.position);
+    if (rightIndex === -1) {
+      rightIndex = lchStops.length - 1;
+    }
+    if (rightIndex === 0) {
+      out.push(oklabToRgb(oklchToOklab(lchStops[0].lch)));
+      continue;
+    }
+
+    const left = lchStops[rightIndex - 1];
+    const right = lchStops[rightIndex];
+    const segmentSpan = Math.max(1e-6, right.position - left.position);
+    const localT = clamp01((t - left.position) / segmentSpan);
+    out.push(oklabToRgb(oklchToOklab(mixOklch(left.lch, right.lch, localT))));
+  }
+
   return out;
 }

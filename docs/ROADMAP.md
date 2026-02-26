@@ -9,18 +9,22 @@
 - Curve-based adjustment in Oklab channels (L/a/b)
 - Figma plugin shell and solid-fill apply flow
 - Unit tests for math core
+- Basic undo stack in UI state
 
 ## v0.2 (next)
 
-- Multi-stop gradient editor in Oklch
-- Preset curve packs (contrast, filmic, pastel recover)
-- Gamut warning and clipping strategy options
+- Multi-stop gradient editor in Oklch with editable stop colors and palette presets (implemented)
+- Preset curve packs (contrast, filmic, pastel recover) (implemented)
+- Gamut warning and clipping strategy options (implemented)
 - Batch apply to multi-selection
-- Basic undo stack in UI state
 
 ## v0.3
 
 - Region masks by luminance/chroma range
 - Histogram and waveform in Oklab channels
-- Save/load adjustment recipes
-- Plug-in side panel polish and i18n
+- Plug-in side panel polish and i18n (implemented: EN/zh-CN toggle + localized UI copy)
+- Domain foundation pass: official Figma runtime digest + stable local smoke harness (`docs/figma-domain-foundation.md`, `npm run smoke:plugin`)
+
+## done ahead
+
+- Save/load adjustment recipes (plugin-local storage)
