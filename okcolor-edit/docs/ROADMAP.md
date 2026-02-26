@@ -23,6 +23,7 @@
 - Region masks by luminance/chroma range
 - Histogram and waveform in Oklab channels
 - Plug-in side panel polish and i18n (implemented: EN/zh-CN toggle + localized UI copy)
+- Domain foundation pass: official Figma runtime digest + stable local smoke harness (`docs/figma-domain-foundation.md`, `npm run smoke:plugin`)
 
 ## done ahead
 
