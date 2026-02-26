@@ -231,7 +231,7 @@
     return enforceGamut(oklabToRgbUnclamped(labAfterCurve), settings.gamutPolicy).rgb;
   }
   function sanitizeGradientStops(stops) {
-    const normalized = (stops ?? []).map((stop) => ({
+    const normalized = (stops != null ? stops : []).map((stop) => ({
       position: Math.min(1, Math.max(0, Number(stop.position))),
       color: stop.color
     })).filter(
@@ -257,7 +257,7 @@
   }
   function getGradientTransformForNode(fills) {
     const existingGradient = getExistingGradientPaint(fills);
-    if (existingGradient?.gradientTransform) {
+    if (existingGradient == null ? void 0 : existingGradient.gradientTransform) {
       return existingGradient.gradientTransform;
     }
     return [[1, 0, 0], [0, 1, 0]];
@@ -266,6 +266,7 @@
     return replaceAtOrPrepend(fills, replaceIndex, nextPaint);
   }
   figma.ui.onmessage = (msg) => {
+    var _a, _b, _c, _d, _e, _f, _g, _h;
     if (msg.type === "request-selection-color") {
       figma.ui.postMessage({ type: "selection-color", color: getSolidPaintColor() });
     }
@@ -281,12 +282,12 @@
         }
         const fills = node.fills;
         const sourceSolid = fills.find((paint) => paint.type === "SOLID");
-        const baseColor = sourceSolid?.color ?? { r: 0.5, g: 0.5, b: 0.5 };
+        const baseColor = (_a = sourceSolid == null ? void 0 : sourceSolid.color) != null ? _a : { r: 0.5, g: 0.5, b: 0.5 };
         const nextSolid = {
           type: "SOLID",
-          visible: sourceSolid?.visible ?? true,
-          opacity: sourceSolid?.opacity ?? 1,
-          blendMode: sourceSolid?.blendMode ?? "NORMAL",
+          visible: (_b = sourceSolid == null ? void 0 : sourceSolid.visible) != null ? _b : true,
+          opacity: (_c = sourceSolid == null ? void 0 : sourceSolid.opacity) != null ? _c : 1,
+          blendMode: (_d = sourceSolid == null ? void 0 : sourceSolid.blendMode) != null ? _d : "NORMAL",
           color: applySolidAdjustment(baseColor, settings)
         };
         const next = replaceOrPrependPaint(
@@ -297,7 +298,7 @@
         try {
           node.fills = next;
           updatedNodes += 1;
-        } catch {
+        } catch (e) {
           skippedReadonly += 1;
         }
       }
@@ -321,10 +322,10 @@
         const fills = node.fills;
         const sourceGradient = getExistingGradientPaint(fills);
         const nextGradient = {
-          type: sourceGradient?.type ?? "GRADIENT_LINEAR",
-          visible: sourceGradient?.visible ?? true,
-          opacity: sourceGradient?.opacity ?? 1,
-          blendMode: sourceGradient?.blendMode ?? "NORMAL",
+          type: (_e = sourceGradient == null ? void 0 : sourceGradient.type) != null ? _e : "GRADIENT_LINEAR",
+          visible: (_f = sourceGradient == null ? void 0 : sourceGradient.visible) != null ? _f : true,
+          opacity: (_g = sourceGradient == null ? void 0 : sourceGradient.opacity) != null ? _g : 1,
+          blendMode: (_h = sourceGradient == null ? void 0 : sourceGradient.blendMode) != null ? _h : "NORMAL",
           gradientTransform: getGradientTransformForNode(fills),
           gradientStops
         };
@@ -336,7 +337,7 @@
         try {
           node.fills = next;
           updatedNodes += 1;
-        } catch {
+        } catch (e) {
           skippedReadonly += 1;
         }
       }

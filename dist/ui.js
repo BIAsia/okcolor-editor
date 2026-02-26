@@ -152,13 +152,14 @@ function computeRegionMaskWeight(lch, mask) {
   return lWeight * cWeight;
 }
 function gradientRampFromStops(stops, steps) {
+  var _a, _b;
   const count = Math.max(2, Math.floor(steps));
   const normalizedStops = stops.slice().map((stop) => ({
     position: clamp01(stop.position),
     color: stop.color
   })).sort((left, right) => left.position - right.position);
   if (normalizedStops.length < 2) {
-    const fallback = normalizedStops[0]?.color ?? { r: 0, g: 0, b: 0 };
+    const fallback = (_b = (_a = normalizedStops[0]) == null ? void 0 : _a.color) != null ? _b : { r: 0, g: 0, b: 0 };
     return Array.from({ length: count }, () => Object.assign({}, fallback));
   }
   const anchoredStops = normalizedStops.slice();
@@ -473,9 +474,9 @@ function updateHistoryButtons() {
 function normalizeRecipeState(state) {
   const fallback = captureState();
   return Object.assign({}, fallback, state, {
-    curvePack: typeof state?.curvePack === "string" ? state.curvePack : fallback.curvePack,
-    curveMidA: typeof state?.curveMidA === "string" ? state.curveMidA : fallback.curveMidA,
-    curveMidB: typeof state?.curveMidB === "string" ? state.curveMidB : fallback.curveMidB
+    curvePack: typeof (state == null ? void 0 : state.curvePack) === "string" ? state.curvePack : fallback.curvePack,
+    curveMidA: typeof (state == null ? void 0 : state.curveMidA) === "string" ? state.curveMidA : fallback.curveMidA,
+    curveMidB: typeof (state == null ? void 0 : state.curveMidB) === "string" ? state.curveMidB : fallback.curveMidB
   });
 }
 function loadRecipes() {
@@ -484,10 +485,10 @@ function loadRecipes() {
     if (!raw) return [];
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
-    return parsed.filter((recipe) => Boolean(recipe?.name) && Boolean(recipe?.state)).map((recipe) => Object.assign({}, recipe, {
+    return parsed.filter((recipe) => Boolean(recipe == null ? void 0 : recipe.name) && Boolean(recipe == null ? void 0 : recipe.state)).map((recipe) => Object.assign({}, recipe, {
       state: normalizeRecipeState(recipe.state)
     }));
-  } catch {
+  } catch (e) {
     return [];
   }
 }
@@ -573,7 +574,7 @@ function applyPalette(paletteId) {
 parent.postMessage({ pluginMessage: { type: "request-selection-color" } }, "*");
 window.onmessage = (evt) => {
   const msg = evt.data.pluginMessage;
-  if (msg?.type === "selection-color" && msg.color) {
+  if ((msg == null ? void 0 : msg.type) === "selection-color" && msg.color) {
     selectedColor = msg.color;
     const editedBase = computeEditedColor().rgb;
     gradStartColor.value = rgbToHex(editedBase);
@@ -813,6 +814,7 @@ function getMaskConfig() {
   };
 }
 function renderMaskScope(weights) {
+  var _a;
   const ctx = maskScope.getContext("2d");
   if (!ctx) return;
   const width = maskScope.width;
@@ -823,7 +825,7 @@ function renderMaskScope(weights) {
   ctx.fillStyle = "#fff";
   ctx.fillRect(0, 0, width, height);
   for (let i = 0; i < count; i++) {
-    const weight = Math.min(1, Math.max(0, weights[i] ?? 0));
+    const weight = Math.min(1, Math.max(0, (_a = weights[i]) != null ? _a : 0));
     const barHeight = weight * (height - 6);
     const alpha = 0.2 + weight * 0.75;
     ctx.fillStyle = `rgba(31, 122, 109, ${alpha.toFixed(3)})`;
@@ -929,8 +931,9 @@ function redo() {
 undoBtn.onclick = undo;
 redoBtn.onclick = redo;
 recipeList.onchange = () => {
+  var _a;
   const selected = recipes.find((recipe) => recipe.name === recipeList.value);
-  recipeName.value = selected?.name ?? "";
+  recipeName.value = (_a = selected == null ? void 0 : selected.name) != null ? _a : "";
   const hasSelection = recipeList.value !== "";
   loadRecipeBtn.disabled = !hasSelection;
   deleteRecipeBtn.disabled = !hasSelection;
