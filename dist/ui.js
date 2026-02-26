@@ -85,7 +85,7 @@ function adjustInOklch(rgb, delta) {
 }
 function applyCurve(value, points) {
   const x = clamp01(value);
-  const sorted = [...points].sort((p, q) => p.x - q.x);
+  const sorted = points.slice().sort((p, q) => p.x - q.x);
   if (sorted.length === 0) return x;
   if (x <= sorted[0].x) return clamp01(sorted[0].y);
   for (let i = 1; i < sorted.length; i++) {

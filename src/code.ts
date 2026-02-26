@@ -20,7 +20,7 @@ figma.ui.onmessage = (msg) => {
     if (!node || !("fills" in node)) return;
     const fills = node.fills as ReadonlyArray<Paint>;
     const next = fills.map((p) =>
-      p.type === "SOLID" ? { ...p, color: msg.color as RGB } : p
+      p.type === "SOLID" ? Object.assign({}, p, { color: msg.color as RGB }) : p
     );
     node.fills = next;
     figma.notify("Applied OKColor edit");
