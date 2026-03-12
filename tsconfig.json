@@ -7,7 +7,7 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "resolveJsonModule": true,
-    "types": ["vitest/globals"]
+    "types": []
   },
-  "include": ["src", "tests", "build.mjs"]
+  "include": ["src/color.ts", "build.mjs"]
 }

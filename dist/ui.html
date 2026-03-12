@@ -1,67 +1,788 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>okcolor edit</title>
+  <title>OKColor Editor</title>
   <style>
-    :root { --bg:#f7f5ef; --panel:#fffdf8; --text:#1f1e1a; --accent:#1f7a6d; --warn:#b45309; }
-    body { margin:0; font:13px/1.4 ui-sans-serif, system-ui; background:var(--bg); color:var(--text); }
-    .wrap { padding:12px; }
-    .panel { background:var(--panel); border:1px solid #ddd5c8; border-radius:10px; padding:10px; margin-bottom:10px; }
-    label { display:block; margin:6px 0 4px; font-weight:600; }
-    input[type="range"] { width:100%; }
-    button { border:0; background:var(--accent); color:#fff; border-radius:8px; padding:8px 10px; cursor:pointer; }
-    .row { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
-    .small { font-size:12px; opacity:0.75; }
-    .warn { color: var(--warn); font-weight: 600; }
-    canvas { width: 100%; height: 28px; border-radius: 6px; border: 1px solid #ddd5c8; }
-    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; }
-    select { width: 100%; padding: 6px; border-radius: 6px; border: 1px solid #ddd5c8; background: #fff; }
+    /* ── Design tokens ─────────────────────────────────── */
+    :root {
+      --bg: #f5f5f5;
+      --surface: #ffffff;
+      --surface2: #f8f8f8;
+      --border: #e0e0e0;
+      --border2: #d0d0d0;
+      --text: #1e1e1e;
+      --text2: #6e6e6e;
+      --accent: #18a0fb;
+      --accent-hover: #0d8de3;
+      --danger: #f24822;
+      --warn: #e8a000;
+      --success: #1bc47d;
+      --radius: 6px;
+      --track-h: 3px;
+    }
+
+    /* ── Reset & base ─────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { width: 320px; height: 100%; overflow-x: hidden; }
+    body {
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 11px;
+      line-height: 1.4;
+      color: var(--text);
+      background: var(--bg);
+    }
+    button { cursor: pointer; font: inherit; border: none; }
+    input, select { font: inherit; color: var(--text); }
+    canvas { display: block; }
+
+    /* ── Layout ────────────────────────────────────────── */
+    #app { display: flex; flex-direction: column; height: 100vh; }
+
+    /* ── Header ────────────────────────────────────────── */
+    #header {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 12px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    #header .logo {
+      width: 18px; height: 18px;
+      background: linear-gradient(135deg, #18a0fb 0%, #9b59b6 100%);
+      border-radius: 4px;
+      flex-shrink: 0;
+    }
+    #header .title {
+      font-weight: 600;
+      font-size: 12px;
+      flex: 1;
+    }
+    #header .subtitle { color: var(--text2); font-size: 10px; }
+    #btn-reset-all {
+      padding: 3px 8px;
+      background: transparent;
+      border: 1px solid var(--border2);
+      border-radius: var(--radius);
+      color: var(--text2);
+      font-size: 10px;
+    }
+    #btn-reset-all:hover { border-color: var(--danger); color: var(--danger); }
+
+    /* ── Status bar ─────────────────────────────────────── */
+    #status-bar {
+      padding: 5px 12px;
+      background: var(--surface2);
+      border-bottom: 1px solid var(--border);
+      color: var(--text2);
+      font-size: 10px;
+      min-height: 22px;
+      flex-shrink: 0;
+    }
+    #status-bar.warn { color: var(--warn); }
+    #status-bar.ok { color: var(--success); }
+
+    /* ── Tab bar ─────────────────────────────────────────── */
+    #tab-bar {
+      display: flex;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+      overflow-x: auto;
+    }
+    #tab-bar::-webkit-scrollbar { display: none; }
+    .tab-btn {
+      flex: 1;
+      padding: 7px 4px;
+      background: none;
+      border-bottom: 2px solid transparent;
+      color: var(--text2);
+      font-size: 10px;
+      font-weight: 500;
+      text-align: center;
+      white-space: nowrap;
+      transition: color .12s, border-color .12s;
+      min-width: 48px;
+    }
+    .tab-btn.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+      font-weight: 600;
+    }
+    .tab-btn:hover:not(.active) { color: var(--text); }
+
+    /* ── Tab content ─────────────────────────────────────── */
+    #tab-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0;
+    }
+    #tab-content::-webkit-scrollbar { width: 4px; }
+    #tab-content::-webkit-scrollbar-track { background: transparent; }
+    #tab-content::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* ── Section ─────────────────────────────────────────── */
+    .section {
+      border-bottom: 1px solid var(--border);
+    }
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 7px 12px;
+      cursor: pointer;
+      user-select: none;
+      background: var(--surface);
+    }
+    .section-header:hover { background: var(--surface2); }
+    .section-title {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .section-badge {
+      font-size: 9px;
+      padding: 1px 5px;
+      background: var(--accent);
+      color: white;
+      border-radius: 8px;
+      margin-left: 5px;
+      display: none;
+    }
+    .section-badge.visible { display: inline; }
+    .section-arrow {
+      color: var(--text2);
+      font-size: 10px;
+      transition: transform .15s;
+    }
+    .section.collapsed .section-arrow { transform: rotate(-90deg); }
+    .section-body { padding: 6px 12px 10px; background: var(--surface); }
+    .section.collapsed .section-body { display: none; }
+
+    /* ── Slider row ─────────────────────────────────────── */
+    .slider-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 6px;
+    }
+    .slider-label {
+      width: 82px;
+      flex-shrink: 0;
+      color: var(--text2);
+      font-size: 10px;
+      cursor: default;
+    }
+    .slider-label.reset-target { cursor: pointer; }
+    .slider-label.reset-target:hover { color: var(--accent); }
+    .slider-wrap {
+      flex: 1;
+      position: relative;
+      height: 16px;
+      display: flex;
+      align-items: center;
+    }
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: var(--track-h);
+      border-radius: 2px;
+      background: var(--border2);
+      outline: none;
+      cursor: pointer;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 12px;
+      height: 12px;
+      background: white;
+      border: 1.5px solid var(--border2);
+      border-radius: 50%;
+      cursor: pointer;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+      transition: border-color .1s;
+    }
+    input[type="range"]:hover::-webkit-slider-thumb,
+    input[type="range"]:focus::-webkit-slider-thumb { border-color: var(--accent); }
+    input[type="range"].changed::-webkit-slider-thumb { border-color: var(--accent); background: var(--accent); }
+    .num-input {
+      width: 38px;
+      flex-shrink: 0;
+      text-align: right;
+      padding: 2px 4px;
+      border: 1px solid transparent;
+      border-radius: 3px;
+      background: transparent;
+      font-size: 10px;
+      color: var(--text);
+    }
+    .num-input:hover { border-color: var(--border2); background: var(--surface2); }
+    .num-input:focus { border-color: var(--accent); outline: none; background: var(--surface); }
+    .num-input.changed { color: var(--accent); font-weight: 600; }
+
+    /* ── Toggle row ─────────────────────────────────────── */
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 3px 0 3px;
+      margin-bottom: 2px;
+    }
+    .toggle-label {
+      font-size: 10px;
+      color: var(--text2);
+    }
+    .toggle {
+      position: relative;
+      width: 28px;
+      height: 15px;
+      flex-shrink: 0;
+    }
+    .toggle input { display: none; }
+    .toggle-slider {
+      position: absolute;
+      inset: 0;
+      background: var(--border2);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background .15s;
+    }
+    .toggle-slider::after {
+      content: "";
+      position: absolute;
+      width: 11px;
+      height: 11px;
+      background: white;
+      border-radius: 50%;
+      top: 2px;
+      left: 2px;
+      transition: transform .15s;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    }
+    .toggle input:checked + .toggle-slider { background: var(--accent); }
+    .toggle input:checked + .toggle-slider::after { transform: translateX(13px); }
+
+    /* ── HSL Mixer ──────────────────────────────────────── */
+    .hue-band-tabs {
+      display: flex;
+      gap: 2px;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+    }
+    .hue-band-btn {
+      padding: 3px 7px;
+      font-size: 10px;
+      border-radius: 10px;
+      border: 1px solid var(--border2);
+      background: var(--surface2);
+      color: var(--text2);
+      cursor: pointer;
+      transition: all .1s;
+    }
+    .hue-band-btn.active {
+      color: white;
+      border-color: transparent;
+    }
+    .hue-band-btn.changed { font-weight: 700; }
+
+    /* ── Curves editor ──────────────────────────────────── */
+    .curve-channel-tabs {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 8px;
+    }
+    .curve-ch-btn {
+      padding: 3px 10px;
+      font-size: 10px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border2);
+      background: var(--surface2);
+      color: var(--text2);
+      cursor: pointer;
+    }
+    .curve-ch-btn.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: white;
+    }
+    #curve-canvas {
+      width: 100%;
+      height: 180px;
+      border: 1px solid var(--border2);
+      border-radius: var(--radius);
+      cursor: crosshair;
+      background: #fafafa;
+      display: block;
+    }
+    .curve-hint {
+      font-size: 9px;
+      color: var(--text2);
+      margin-top: 4px;
+      text-align: center;
+    }
+    #btn-reset-curve {
+      padding: 3px 8px;
+      font-size: 10px;
+      background: transparent;
+      border: 1px solid var(--border2);
+      border-radius: var(--radius);
+      color: var(--text2);
+      margin-top: 6px;
+    }
+    #btn-reset-curve:hover { border-color: var(--danger); color: var(--danger); }
+
+    /* ── Split Toning ───────────────────────────────────── */
+    .toning-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .toning-section-label {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text2);
+      margin-bottom: 4px;
+    }
+    .hue-ring-wrap {
+      position: relative;
+      width: 64px;
+      height: 64px;
+      margin: 0 auto 4px;
+    }
+    canvas.hue-ring { width: 64px; height: 64px; cursor: pointer; border-radius: 50%; }
+
+    /* ── Color Grading ──────────────────────────────────── */
+    .grading-wheels {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+    .wheel-label {
+      text-align: center;
+      font-size: 9px;
+      font-weight: 600;
+      color: var(--text2);
+      margin-bottom: 4px;
+    }
+    canvas.grade-ring { width: 64px; height: 64px; cursor: pointer; border-radius: 50%; display: block; margin: 0 auto; }
+
+    /* ── Footer actions ─────────────────────────────────── */
+    #footer {
+      padding: 8px 12px;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+    #btn-apply {
+      flex: 1;
+      padding: 7px 12px;
+      background: var(--accent);
+      color: white;
+      border-radius: var(--radius);
+      font-size: 11px;
+      font-weight: 600;
+      transition: background .1s;
+    }
+    #btn-apply:hover { background: var(--accent-hover); }
+    #btn-apply:disabled { opacity: 0.4; cursor: not-allowed; }
+    #btn-revert {
+      padding: 7px 10px;
+      background: transparent;
+      border: 1px solid var(--border2);
+      border-radius: var(--radius);
+      color: var(--text2);
+      font-size: 11px;
+    }
+    #btn-revert:hover { border-color: var(--danger); color: var(--danger); }
+
+    /* ── Color swatch pair ──────────────────────────────── */
+    .swatch-pair {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 8px;
+      align-items: center;
+    }
+    .swatch {
+      width: 28px; height: 28px;
+      border-radius: 4px;
+      border: 1px solid var(--border2);
+      flex-shrink: 0;
+    }
+    .swatch-label { font-size: 9px; color: var(--text2); }
+
+    /* ── Empty state ────────────────────────────────────── */
+    .empty-state {
+      padding: 24px 16px;
+      text-align: center;
+      color: var(--text2);
+    }
+    .empty-state .icon { font-size: 28px; margin-bottom: 8px; }
+    .empty-state p { font-size: 11px; line-height: 1.5; }
+
+    /* ── Image processing indicator ─────────────────────── */
+    #img-progress {
+      display: none;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 12px;
+      background: #fff9e6;
+      border-top: 1px solid #ffe8a0;
+      font-size: 10px;
+      color: var(--warn);
+      flex-shrink: 0;
+    }
+    #img-progress.visible { display: flex; }
+    .spinner {
+      width: 12px; height: 12px;
+      border: 2px solid var(--border2);
+      border-top-color: var(--warn);
+      border-radius: 50%;
+      animation: spin .8s linear infinite;
+      flex-shrink: 0;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="panel">
-      <div><strong>okcolor edit</strong></div>
-      <div class="small">Oklab/Oklch conversion, gradient, curve, gamut policy</div>
-    </div>
+<div id="app">
 
-    <div class="panel">
-      <label>L shift</label><input id="l" type="range" min="-0.2" max="0.2" step="0.005" value="0" />
-      <label>a shift</label><input id="a" type="range" min="-0.2" max="0.2" step="0.005" value="0" />
-      <label>b shift</label><input id="b" type="range" min="-0.2" max="0.2" step="0.005" value="0" />
-      <div class="row">
-        <div><label>C shift</label><input id="c" type="range" min="-0.2" max="0.2" step="0.005" value="0" /></div>
-        <div><label>H shift</label><input id="h" type="range" min="-180" max="180" step="1" value="0" /></div>
+  <!-- Header -->
+  <div id="header">
+    <div class="logo"></div>
+    <div>
+      <div class="title">OKColor Editor</div>
+    </div>
+    <button id="btn-reset-all" title="Reset all adjustments">Reset All</button>
+  </div>
+
+  <!-- Status bar -->
+  <div id="status-bar">Select a layer to begin.</div>
+
+  <!-- Tab bar -->
+  <div id="tab-bar">
+    <button class="tab-btn active" data-tab="tone">Tone</button>
+    <button class="tab-btn" data-tab="color">Color</button>
+    <button class="tab-btn" data-tab="mix">HSL Mix</button>
+    <button class="tab-btn" data-tab="curves">Curves</button>
+    <button class="tab-btn" data-tab="grade">Grade</button>
+  </div>
+
+  <!-- Tab content -->
+  <div id="tab-content">
+
+    <!-- ══ Tone Tab ══════════════════════════════════════ -->
+    <div class="tab-panel active" id="tab-tone">
+      <div class="section" id="sec-tone">
+        <div class="section-header" data-section="tone">
+          <span class="section-title">Tone <span class="section-badge" id="badge-tone"></span></span>
+          <span class="section-arrow">▾</span>
+        </div>
+        <div class="section-body">
+          <div class="slider-row">
+            <span class="slider-label reset-target" data-reset="exposure">Exposure</span>
+            <div class="slider-wrap"><input type="range" id="exposure" min="-5" max="5" step="0.05" value="0"></div>
+            <input type="number" class="num-input" id="exposure-n" min="-5" max="5" step="0.05" value="0">
+          </div>
+          <div class="slider-row">
+            <span class="slider-label reset-target" data-reset="contrast">Contrast</span>
+            <div class="slider-wrap"><input type="range" id="contrast" min="-100" max="100" step="1" value="0"></div>
+            <input type="number" class="num-input" id="contrast-n" min="-100" max="100" step="1" value="0">
+          </div>
+          <div class="slider-row">
+            <span class="slider-label reset-target" data-reset="highlights">Highlights</span>
+            <div class="slider-wrap"><input type="range" id="highlights" min="-100" max="100" step="1" value="0"></div>
+            <input type="number" class="num-input" id="highlights-n" min="-100" max="100" step="1" value="0">
+          </div>
+          <div class="slider-row">
+            <span class="slider-label reset-target" data-reset="shadows">Shadows</span>
+            <div class="slider-wrap"><input type="range" id="shadows" min="-100" max="100" step="1" value="0"></div>
+            <input type="number" class="num-input" id="shadows-n" min="-100" max="100" step="1" value="0">
+          </div>
+          <div class="slider-row">
+            <span class="slider-label reset-target" data-reset="whites">Whites</span>
+            <div class="slider-wrap"><input type="range" id="whites" min="-100" max="100" step="1" value="0"></div>
+            <input type="number" class="num-input" id="whites-n" min="-100" max="100" step="1" value="0">
+          </div>
+          <div class="slider-row">
+            <span class="slider-label reset-target" data-reset="blacks">Blacks</span>
+            <div class="slider-wrap"><input type="range" id="blacks" min="-100" max="100" step="1" value="0"></div>
+            <input type="number" class="num-input" id="blacks-n" min="-100" max="100" step="1" value="0">
+          </div>
+          <div class="slider-row">
+            <span class="slider-label reset-target" data-reset="clarity">Clarity</span>
+            <div class="slider-wrap"><input type="range" id="clarity" min="-100" max="100" step="1" value="0"></div>
+            <input type="number" class="num-input" id="clarity-n" min="-100" max="100" step="1" value="0">
+          </div>
+        </div>
+      </div>
+
+      <!-- Preview swatches -->
+      <div class="section" id="sec-preview">
+        <div class="section-header" data-section="preview">
+          <span class="section-title">Preview</span>
+          <span class="section-arrow">▾</span>
+        </div>
+        <div class="section-body">
+          <div class="swatch-pair">
+            <div>
+              <div class="swatch" id="swatch-before" style="background:#aaa;"></div>
+              <div class="swatch-label">Before</div>
+            </div>
+            <div>
+              <div class="swatch" id="swatch-after" style="background:#aaa;"></div>
+              <div class="swatch-label">After</div>
+            </div>
+            <div style="flex:1; font-size:10px; color:var(--text2); line-height:1.4;">
+              First fill of selected layer. Applies to all solid fills &amp; gradient stops.
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
-    <div class="panel">
-      <label>Curve midpoint (L channel)</label>
-      <input id="curveMid" type="range" min="0" max="1" step="0.01" value="0.5" />
-      <div class="small mono" id="curveHint">curve: (0,0) -> (0.5,0.5) -> (1,1)</div>
+    <!-- ══ Color Tab ══════════════════════════════════════ -->
+    <div class="tab-panel" id="tab-color">
+      <div class="section">
+        <div class="section-header" data-section="color-wb">
+          <span class="section-title">White Balance <span class="section-badge" id="badge-wb"></span></span>
+          <span class="section-arrow">▾</span>
+        </div>
+        <div class="section-body">
+          <div class="slider-row">
+            <span class="slider-label reset-target" data-reset="temperature">Temp</span>
+            <div class="slider-wrap">
+              <input type="range" id="temperature" min="-100" max="100" step="1" value="0"
+                style="background: linear-gradient(to right, #80b0ff, #fffdf0, #ffb060);">
+            </div>
+            <input type="number" class="num-input" id="temperature-n" min="-100" max="100" step="1" value="0">
+          </div>
+          <div class="slider-row">
+            <span class="slider-label reset-target" data-reset="tint">Tint</span>
+            <div class="slider-wrap">
+              <input type="range" id="tint" min="-100" max="100" step="1" value="0"
+                style="background: linear-gradient(to right, #60c060, #f0f0f0, #e060b0);">
+            </div>
+            <input type="number" class="num-input" id="tint-n" min="-100" max="100" step="1" value="0">
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-header" data-section="color-hsl">
+          <span class="section-title">Hue / Saturation <span class="section-badge" id="badge-hsl"></span></span>
+          <span class="section-arrow">▾</span>
+        </div>
+        <div class="section-body">
+          <div class="slider-row">
+            <span class="slider-label reset-target" data-reset="hueShift">Hue</span>
+            <div class="slider-wrap"><input type="range" id="hueShift" min="-180" max="180" step="1" value="0"></div>
+            <input type="number" class="num-input" id="hueShift-n" min="-180" max="180" step="1" value="0">
+          </div>
+          <div class="slider-row">
+            <span class="slider-label reset-target" data-reset="saturation">Saturation</span>
+            <div class="slider-wrap"><input type="range" id="saturation" min="-100" max="100" step="1" value="0"></div>
+            <input type="number" class="num-input" id="saturation-n" min="-100" max="100" step="1" value="0">
+          </div>
+          <div class="slider-row">
+            <span class="slider-label reset-target" data-reset="vibrance">Vibrance</span>
+            <div class="slider-wrap"><input type="range" id="vibrance" min="-100" max="100" step="1" value="0"></div>
+            <input type="number" class="num-input" id="vibrance-n" min="-100" max="100" step="1" value="0">
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-header" data-section="color-fx">
+          <span class="section-title">Effects</span>
+          <span class="section-arrow">▾</span>
+        </div>
+        <div class="section-body">
+          <div class="toggle-row">
+            <span class="toggle-label">Invert Colors</span>
+            <label class="toggle">
+              <input type="checkbox" id="invert">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="toggle-row">
+            <span class="toggle-label">Monochrome (B&amp;W)</span>
+            <label class="toggle">
+              <input type="checkbox" id="monochrome">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div id="mono-mix" style="display:none; margin-top:6px;">
+            <div class="slider-row">
+              <span class="slider-label" style="color:#e05">Red</span>
+              <div class="slider-wrap"><input type="range" id="monoR" min="0" max="200" step="1" value="100"></div>
+              <input type="number" class="num-input" id="monoR-n" min="0" max="200" step="1" value="100">
+            </div>
+            <div class="slider-row">
+              <span class="slider-label" style="color:#0a5;">Green</span>
+              <div class="slider-wrap"><input type="range" id="monoG" min="0" max="200" step="1" value="100"></div>
+              <input type="number" class="num-input" id="monoG-n" min="0" max="200" step="1" value="100">
+            </div>
+            <div class="slider-row">
+              <span class="slider-label" style="color:#05e;">Blue</span>
+              <div class="slider-wrap"><input type="range" id="monoB" min="0" max="200" step="1" value="100"></div>
+              <input type="number" class="num-input" id="monoB-n" min="0" max="200" step="1" value="100">
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <div class="panel">
-      <label>Gradient end hue shift</label>
-      <input id="gradHue" type="range" min="-180" max="180" step="1" value="45" />
-      <canvas id="gradPreview" width="320" height="28"></canvas>
+    <!-- ══ HSL Mix Tab ════════════════════════════════════ -->
+    <div class="tab-panel" id="tab-mix">
+      <div class="section">
+        <div class="section-header" data-section="hsl-mix">
+          <span class="section-title">HSL Color Mixer</span>
+          <span class="section-arrow">▾</span>
+        </div>
+        <div class="section-body">
+          <div class="hue-band-tabs" id="hue-band-tabs">
+            <!-- Dynamically generated -->
+          </div>
+          <div id="hsl-band-body">
+            <!-- Dynamically generated sliders per band -->
+          </div>
+        </div>
+      </div>
     </div>
 
-    <div class="panel">
-      <label>Gamut policy</label>
-      <select id="gamutPolicy">
-        <option value="clip">clip</option>
-        <option value="compress">compress</option>
-        <option value="warn">warn + clip</option>
-      </select>
-      <div id="gamutStatus" class="small"></div>
-      <button id="apply">Apply to selection</button>
+    <!-- ══ Curves Tab ═════════════════════════════════════ -->
+    <div class="tab-panel" id="tab-curves">
+      <div class="section">
+        <div class="section-header" data-section="curves">
+          <span class="section-title">Tone Curves (OkLCH)</span>
+          <span class="section-arrow">▾</span>
+        </div>
+        <div class="section-body">
+          <div class="curve-channel-tabs">
+            <button class="curve-ch-btn active" data-ch="l">L</button>
+            <button class="curve-ch-btn" data-ch="c">C</button>
+            <button class="curve-ch-btn" data-ch="h">H</button>
+          </div>
+          <canvas id="curve-canvas" width="280" height="180"
+            title="Click to add point · Drag to move · Double-click to remove"></canvas>
+          <div class="curve-hint">Click to add · Drag to move · Dbl-click to remove</div>
+          <button id="btn-reset-curve">Reset Channel</button>
+        </div>
+      </div>
     </div>
 
-    <div class="panel small">Tip: select a layer with SOLID fill first.</div>
+    <!-- ══ Grade Tab ══════════════════════════════════════ -->
+    <div class="tab-panel" id="tab-grade">
+      <!-- Split Toning -->
+      <div class="section">
+        <div class="section-header" data-section="split-toning">
+          <span class="section-title">Split Toning <span class="section-badge" id="badge-st"></span></span>
+          <span class="section-arrow">▾</span>
+        </div>
+        <div class="section-body">
+          <div class="toning-grid">
+            <div>
+              <div class="toning-section-label">Shadows</div>
+              <div class="hue-ring-wrap">
+                <canvas class="hue-ring" id="shadow-ring" width="64" height="64"></canvas>
+              </div>
+              <div class="slider-row">
+                <span class="slider-label reset-target" data-reset="shadowSat" style="width:auto;flex:1;">Saturation</span>
+                <input type="number" class="num-input" id="shadowSat-n" min="0" max="100" step="1" value="0">
+              </div>
+              <div class="slider-wrap" style="margin-bottom:4px;">
+                <input type="range" id="shadowSat" min="0" max="100" step="1" value="0" style="width:100%;">
+              </div>
+            </div>
+            <div>
+              <div class="toning-section-label">Highlights</div>
+              <div class="hue-ring-wrap">
+                <canvas class="hue-ring" id="highlight-ring" width="64" height="64"></canvas>
+              </div>
+              <div class="slider-row">
+                <span class="slider-label reset-target" data-reset="highlightSat" style="width:auto;flex:1;">Saturation</span>
+                <input type="number" class="num-input" id="highlightSat-n" min="0" max="100" step="1" value="0">
+              </div>
+              <div class="slider-wrap" style="margin-bottom:4px;">
+                <input type="range" id="highlightSat" min="0" max="100" step="1" value="0" style="width:100%;">
+              </div>
+            </div>
+          </div>
+          <div class="slider-row">
+            <span class="slider-label reset-target" data-reset="stBalance">Balance</span>
+            <div class="slider-wrap"><input type="range" id="stBalance" min="-100" max="100" step="1" value="0"></div>
+            <input type="number" class="num-input" id="stBalance-n" min="-100" max="100" step="1" value="0">
+          </div>
+        </div>
+      </div>
+
+      <!-- 3-Way Color Grading -->
+      <div class="section">
+        <div class="section-header" data-section="color-grading">
+          <span class="section-title">Color Grading <span class="section-badge" id="badge-cg"></span></span>
+          <span class="section-arrow">▾</span>
+        </div>
+        <div class="section-body">
+          <div class="grading-wheels">
+            <div>
+              <div class="wheel-label">Lift (Shadows)</div>
+              <canvas class="grade-ring" id="lift-ring" width="64" height="64"></canvas>
+              <div class="slider-row" style="margin-top:6px;">
+                <span class="slider-label" style="width:auto;flex:1;font-size:9px;">Lum</span>
+                <input type="number" class="num-input" id="liftL-n" min="-100" max="100" step="1" value="0" style="width:32px;">
+              </div>
+              <div class="slider-wrap"><input type="range" id="liftL" min="-100" max="100" step="1" value="0"></div>
+            </div>
+            <div>
+              <div class="wheel-label">Gamma (Mids)</div>
+              <canvas class="grade-ring" id="gamma-ring" width="64" height="64"></canvas>
+              <div class="slider-row" style="margin-top:6px;">
+                <span class="slider-label" style="width:auto;flex:1;font-size:9px;">Lum</span>
+                <input type="number" class="num-input" id="gammaL-n" min="-100" max="100" step="1" value="0" style="width:32px;">
+              </div>
+              <div class="slider-wrap"><input type="range" id="gammaL" min="-100" max="100" step="1" value="0"></div>
+            </div>
+            <div>
+              <div class="wheel-label">Gain (Highlights)</div>
+              <canvas class="grade-ring" id="gain-ring" width="64" height="64"></canvas>
+              <div class="slider-row" style="margin-top:6px;">
+                <span class="slider-label" style="width:auto;flex:1;font-size:9px;">Lum</span>
+                <input type="number" class="num-input" id="gainL-n" min="-100" max="100" step="1" value="0" style="width:32px;">
+              </div>
+              <div class="slider-wrap"><input type="range" id="gainL" min="-100" max="100" step="1" value="0"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /tab-content -->
+
+  <!-- Image progress -->
+  <div id="img-progress">
+    <div class="spinner"></div>
+    <span id="img-progress-text">Processing image…</span>
   </div>
 
-  <script type="module" src="./ui.js"></script>
+  <!-- Footer -->
+  <div id="footer">
+    <button id="btn-revert">Revert</button>
+    <button id="btn-apply" disabled>Apply to Selection</button>
+  </div>
+
+</div><!-- /app -->
+
+<script type="module" src="./ui.js"></script>
 </body>
 </html>
