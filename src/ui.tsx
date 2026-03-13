@@ -1,13 +1,6 @@
-import {
-  render,
-  Container,
-  Text,
-  VerticalSpace,
-  Bold,
-  Muted,
-  RangeSlider,
-  Button,
-} from '@create-figma-plugin/ui'
+import '!figma-plugin-ds/dist/figma-plugin-ds.css'
+import '!./slider.css'
+import { render } from '@create-figma-plugin/ui'
 import { emit, on } from '@create-figma-plugin/utilities'
 import { h } from 'preact'
 import { useState, useEffect, useCallback, useRef } from 'preact/hooks'
@@ -102,85 +95,96 @@ function Plugin() {
 
   const uniqueNodeCount = new Set(colors.map((c) => c.nodeId)).size
 
+  if (!hasSelection) {
+    return (
+      <div style={{ padding: '8px' }}>
+        <div class="onboarding-tip">
+          <div class="icon icon--styles"></div>
+          <div class="onboarding-tip__msg">Select a Frame to begin editing colors.</div>
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <Container space="medium">
-      <VerticalSpace space="large" />
+    <div>
+      {/* Frame name as section title */}
+      <div class="section-title">{frameName}</div>
 
-      {!hasSelection ? (
-        <div>
-          <Text>
-            <Muted>Select a Frame to begin editing colors.</Muted>
-          </Text>
+      {/* Color count summary */}
+      <div class="type" style={{ padding: '0 8px 8px', color: 'var(--black3)' }}>
+        {colors.length} color{colors.length !== 1 ? 's' : ''} across{' '}
+        {uniqueNodeCount} node{uniqueNodeCount !== 1 ? 's' : ''}
+      </div>
+
+      {/* Lightness (L) slider */}
+      <div class="section-title">Lightness (L)</div>
+      <div style={{ padding: '4px 8px 12px' }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '6px' }}>
+          <span class="type" style={{ color: 'var(--black3)' }}>
+            {deltaL > 0 ? '+' : ''}{deltaL.toFixed(3)}
+          </span>
         </div>
-      ) : (
-        <div>
-          <Text>
-            <Bold>{frameName}</Bold>
-          </Text>
-          <VerticalSpace space="extraSmall" />
-          <Text>
-            <Muted>
-              {colors.length} color{colors.length !== 1 ? 's' : ''} across{' '}
-              {uniqueNodeCount} node{uniqueNodeCount !== 1 ? 's' : ''}
-            </Muted>
-          </Text>
+        <input
+          class="slider"
+          type="range"
+          min="-0.5"
+          max="0.5"
+          step="0.001"
+          value={deltaL}
+          onInput={handleLChange}
+        />
+      </div>
 
-          <VerticalSpace space="large" />
-
-          {/* Lightness slider */}
-          <div style={{ marginBottom: '16px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-              <Text><Bold>Lightness (L)</Bold></Text>
-              <Text><Muted>{deltaL > 0 ? '+' : ''}{deltaL.toFixed(3)}</Muted></Text>
-            </div>
-            <RangeSlider
-              maximum={0.5}
-              minimum={-0.5}
-              onInput={handleLChange}
-              value={String(deltaL)}
-              increment={0.001}
-            />
-          </div>
-
-          {/* Chroma slider */}
-          <div style={{ marginBottom: '16px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-              <Text><Bold>Chroma (C)</Bold></Text>
-              <Text><Muted>{deltaC > 0 ? '+' : ''}{deltaC.toFixed(3)}</Muted></Text>
-            </div>
-            <RangeSlider
-              maximum={0.2}
-              minimum={-0.2}
-              onInput={handleCChange}
-              value={String(deltaC)}
-              increment={0.001}
-            />
-          </div>
-
-          {/* Hue slider */}
-          <div style={{ marginBottom: '16px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-              <Text><Bold>Hue (H)</Bold></Text>
-              <Text><Muted>{deltaH > 0 ? '+' : ''}{deltaH.toFixed(1)}{'\u00B0'}</Muted></Text>
-            </div>
-            <RangeSlider
-              maximum={180}
-              minimum={-180}
-              onInput={handleHChange}
-              value={String(deltaH)}
-              increment={1}
-            />
-          </div>
-
-          <VerticalSpace space="small" />
-          <Button fullWidth onClick={handleReset} secondary>
-            Reset
-          </Button>
+      {/* Chroma (C) slider */}
+      <div class="section-title">Chroma (C)</div>
+      <div style={{ padding: '4px 8px 12px' }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '6px' }}>
+          <span class="type" style={{ color: 'var(--black3)' }}>
+            {deltaC > 0 ? '+' : ''}{deltaC.toFixed(3)}
+          </span>
         </div>
-      )}
+        <input
+          class="slider"
+          type="range"
+          min="-0.2"
+          max="0.2"
+          step="0.001"
+          value={deltaC}
+          onInput={handleCChange}
+        />
+      </div>
 
-      <VerticalSpace space="large" />
-    </Container>
+      {/* Hue (H) slider */}
+      <div class="section-title">Hue (H)</div>
+      <div style={{ padding: '4px 8px 16px' }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '6px' }}>
+          <span class="type" style={{ color: 'var(--black3)' }}>
+            {deltaH > 0 ? '+' : ''}{deltaH.toFixed(1)}{'\u00B0'}
+          </span>
+        </div>
+        <input
+          class="slider"
+          type="range"
+          min="-180"
+          max="180"
+          step="1"
+          value={deltaH}
+          onInput={handleHChange}
+        />
+      </div>
+
+      {/* Reset button */}
+      <div style={{ padding: '8px' }}>
+        <button
+          class="button button--secondary"
+          style={{ width: '100%' }}
+          onClick={handleReset}
+        >
+          Reset
+        </button>
+      </div>
+    </div>
   )
 }
 

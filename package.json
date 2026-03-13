@@ -9,6 +9,7 @@
   "dependencies": {
     "@create-figma-plugin/ui": "^3.2.0",
     "@create-figma-plugin/utilities": "^3.2.0",
+    "figma-plugin-ds": "^1.0.1",
     "preact": "^10.24.3"
   },
   "devDependencies": {
@@ -18,7 +19,9 @@
     "typescript": "^5.6.0"
   },
   "figma-plugin": {
-    "editorType": ["figma"],
+    "editorType": [
+      "figma"
+    ],
     "name": "OKColor Editor",
     "id": "okcolor-editor",
     "main": "src/main.ts",
