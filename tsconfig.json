@@ -1,13 +1,10 @@
 {
+  "extends": "@create-figma-plugin/tsconfig",
   "compilerOptions": {
-    "target": "ES2022",
-    "module": "ESNext",
-    "moduleResolution": "Bundler",
-    "strict": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "resolveJsonModule": true,
-    "types": ["vitest/globals"]
+    "typeRoots": [
+      "node_modules/@figma",
+      "node_modules/@types"
+    ]
   },
-  "include": ["src", "tests", "build.mjs"]
+  "include": ["src/**/*.ts", "src/**/*.tsx"]
 }

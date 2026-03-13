@@ -1,8 +1,1 @@
-{
-  "name": "okcolor edit",
-  "id": "okcolor-edit-dev",
-  "api": "1.0.0",
-  "main": "dist/code.js",
-  "ui": "dist/ui.html",
-  "editorType": ["figma"]
-}
+{"api":"1.0.0","editorType":["figma"],"id":"okcolor-editor","name":"OKColor Editor","main":"build/main.js","ui":"build/ui.js"}
