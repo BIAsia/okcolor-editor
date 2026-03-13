@@ -3,14 +3,6 @@
 // ============================================================
 // Types
 // ============================================================
-    | "red"
-    | "orange"
-    | "yellow"
-    | "green"
-    | "aqua"
-    | "blue"
-    | "purple"
-    | "magenta";
 const HUE_BANDS = [
     "red",
     "orange",
@@ -1333,27 +1325,16 @@ function updateStatus() {
         bar.className = "";
         return;
     }
-    const solidCount = currentSelection.fills.filter((f) => f.fillType === "SOLID").length;
-    const gradCount = currentSelection.fills.filter((f) => f.fillType === "GRADIENT").length;
-    const imgCount = currentSelection.fills.filter((f) => f.fillType === "IMAGE").length;
+    const allPaints = currentSelection.fills;
+    const nFills = allPaints.filter((f) => f.source !== "stroke").length;
+    const nStrokes = allPaints.filter((f) => f.source === "stroke").length;
     const parts = [];
-    if (solidCount)
-        parts.push(`${solidCount} solid`);
-    if (gradCount)
-        parts.push(`${gradCount} gradient`);
-    if (imgCount)
-        parts.push(`${imgCount} image`);
-    bar.textContent = `${currentSelection.count} layer(s) · ${parts.join(", ")} fill(s)`;
+    if (nFills)
+        parts.push(`${nFills} fill(s)`);
+    if (nStrokes)
+        parts.push(`${nStrokes} stroke(s)`);
+    bar.textContent = `${currentSelection.count} layer(s) · ${parts.join(", ")}`;
     bar.className = "ok";
-}
-// ============================================================
-// Apply button state
-// ============================================================
-function updateApplyBtn() {
-    const btn = $("btn-apply");
-    if (!btn)
-        return;
-    btn.disabled = currentSelection.count === 0;
 }
 function buildChanges() {
     const changes = [];
@@ -1363,6 +1344,7 @@ function buildChanges() {
                 nodeId: fill.nodeId,
                 fillIndex: fill.fillIndex,
                 fillType: "SOLID",
+                source: fill.source || "fill",
                 color: applyAllAdjustments(fill.color, adj),
                 opacity: fill.opacity,
             });
@@ -1372,6 +1354,7 @@ function buildChanges() {
                 nodeId: fill.nodeId,
                 fillIndex: fill.fillIndex,
                 fillType: "GRADIENT",
+                source: fill.source || "fill",
                 gradientStops: fill.gradientStops.map((stop) => ({
                     ...stop,
                     color: applyAllAdjustments(stop.color, adj),
@@ -1386,6 +1369,7 @@ function buildChanges() {
                     nodeId: fill.nodeId,
                     fillIndex: fill.fillIndex,
                     fillType: "IMAGE",
+                    source: fill.source || "fill",
                     imageBytes: bytes,
                 });
             }
@@ -1460,7 +1444,7 @@ function onAdjustmentChanged() {
         if (currentSelection.count === 0)
             return;
         const changes = buildChanges();
-        parent.postMessage({ pluginMessage: { type: "apply-changes", changes, permanent: false } }, "*");
+        parent.postMessage({ pluginMessage: { type: "apply-changes", changes } }, "*");
     }, 80);
 }
 // ============================================================
@@ -1471,9 +1455,16 @@ window.addEventListener("message", async (evt) => {
     if (!msg)
         return;
     if (msg.type === "selection-update") {
+        // Reset adjustments for fresh editing session
+        adj = defaultAdjustments();
+        syncSliderFromAdj();
+        activeBand = "red";
+        renderHslBandBody();
+        updateHslBandTabs();
+        drawCurve();
+        drawAllHueRings();
         currentSelection = msg.data;
         updateStatus();
-        updateApplyBtn();
         updateSwatches();
         pendingImages.clear();
         pendingImageRequests.clear();
@@ -1528,47 +1519,6 @@ $("btn-revert")?.addEventListener("click", () => {
     drawAllHueRings();
     updateSwatches();
     parent.postMessage({ pluginMessage: { type: "revert" } }, "*");
-});
-// ============================================================
-// Apply button
-// ============================================================
-$("btn-apply")?.addEventListener("click", async () => {
-    if (currentSelection.count === 0)
-        return;
-    const btn = $("btn-apply");
-    btn.disabled = true;
-    btn.textContent = "Applying…";
-    // Re-process images with current adjustments
-    const imageFills = currentSelection.fills.filter((f) => f.fillType === "IMAGE" && f.imageHash);
-    if (imageFills.length > 0) {
-        const $progress = $("img-progress");
-        const $progressText = $("img-progress-text");
-        if ($progress)
-            $progress.classList.add("visible");
-        for (let i = 0; i < imageFills.length; i++) {
-            const fill = imageFills[i];
-            if ($progressText)
-                $progressText.textContent = `Processing image ${i + 1}/${imageFills.length}…`;
-            // Request fresh bytes
-            parent.postMessage({
-                pluginMessage: {
-                    type: "request-image",
-                    nodeId: fill.nodeId,
-                    fillIndex: fill.fillIndex,
-                    imageHash: fill.imageHash,
-                },
-            }, "*");
-            // Wait for bytes to arrive (handled in message listener)
-            // For simplicity, we use a short polling approach here
-            // In production this should use proper async coordination
-        }
-        if ($progress)
-            $progress.classList.remove("visible");
-    }
-    const changes = buildChanges();
-    parent.postMessage({ pluginMessage: { type: "apply-changes", changes, permanent: true } }, "*");
-    btn.textContent = "Apply to Selection";
-    btn.disabled = currentSelection.count === 0;
 });
 // ============================================================
 // Bootstrap

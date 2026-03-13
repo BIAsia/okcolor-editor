@@ -69,10 +69,10 @@ function stripImports(source) {
  * Type-only exports are removed entirely since they're erased in JS.
  */
 function stripExports(source) {
-  // Remove: export type Foo = ...  (single line)
-  source = source.replace(/^export\s+type\s+\w[^\n]*$/gm, "");
-  // Remove: export interface Foo { ... }  and  export type Foo = { ... }
-  // (multi-line handled by removing `export ` prefix)
+  // Strip `export` from type declarations – keep the `type` keyword so that
+  // TypeScript's transpileModule can see (and erase) the full declaration,
+  // including multi-line union types like `export type HueBand = "red" | …`.
+  source = source.replace(/^export\s+type\s+/gm, "type ");
   // Remove export from: export function / export const / export interface / export class / export enum
   source = source.replace(/^export\s+(function|const|let|var|class|interface|enum|abstract)/gm, "$1");
   // Remove: export { ... };
