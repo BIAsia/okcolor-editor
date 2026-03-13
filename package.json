@@ -1,16 +1,27 @@
 {
-  "name": "okcolor-edit",
-  "version": "0.1.0",
-  "private": true,
-  "type": "module",
+  "name": "okcolor-editor",
+  "version": "1.0.0",
+  "description": "Batch edit colors in OKLCH space for selected Figma frames",
   "scripts": {
-    "build": "node build.mjs",
-    "test": "vitest run",
-    "test:watch": "vitest"
+    "build": "build-figma-plugin --typecheck --minify",
+    "watch": "build-figma-plugin --typecheck --watch"
+  },
+  "dependencies": {
+    "@create-figma-plugin/ui": "^3.2.0",
+    "@create-figma-plugin/utilities": "^3.2.0",
+    "preact": "^10.24.3"
   },
   "devDependencies": {
-    "esbuild": "^0.25.0",
-    "typescript": "^5.7.3",
-    "vitest": "^2.1.8"
+    "@create-figma-plugin/build": "^3.2.0",
+    "@create-figma-plugin/tsconfig": "^3.2.0",
+    "@figma/plugin-typings": "^1.100.0",
+    "typescript": "^5.6.0"
+  },
+  "figma-plugin": {
+    "editorType": ["figma"],
+    "name": "OKColor Editor",
+    "id": "okcolor-editor",
+    "main": "src/main.ts",
+    "ui": "src/ui.tsx"
   }
 }
