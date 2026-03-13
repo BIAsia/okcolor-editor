@@ -28,6 +28,26 @@ function transpileTS(source) {
   return result.outputText;
 }
 
+/**
+ * Transpile for Figma's plugin sandbox, which only supports ES6 (ES2015).
+ * Using ES2015 target causes TypeScript to down-compile:
+ *   - Object spread  { ...obj }  →  Object.assign({}, obj)
+ *   - Nullish coalescing  ??      →  ternary expression
+ *   - Optional chaining  ?.       →  conditional chain
+ */
+function transpileTSForSandbox(source) {
+  const result = ts.transpileModule(source, {
+    compilerOptions: {
+      target: ts.ScriptTarget.ES2015,
+      module: ts.ModuleKind.None,
+      removeComments: false,
+      strict: false,
+      noEmitHelpers: false,
+    },
+  });
+  return result.outputText;
+}
+
 // ── Strip TypeScript-only syntax before transpilation ─────
 
 /**
@@ -66,7 +86,8 @@ function stripExports(source) {
 
 function buildCode() {
   const source = readFileSync("src/code.ts", "utf-8");
-  const js = transpileTS(source);
+  // Use ES2015 target: Figma sandbox only supports ES6, not ES2018+ object spread
+  const js = transpileTSForSandbox(source);
   // Figma plugin backend must be in IIFE format
   writeFileSync("dist/code.js", `(function () {\n${js}\n})();\n`);
   console.log("  ✓ dist/code.js");
